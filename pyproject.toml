@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mazegen"
+version = "1.0.0"
+description = "Reusable maze generation module (A-Maze-ing)"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "42 student" }]
+keywords = ["maze", "generator", "backtracker", "labyrinth"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Games/Entertainment :: Puzzle Games",
+]
+
+[tool.setuptools]
+# Distribute only the single-file module (do not include other repo files).
+py-modules = ["mazegen"]
