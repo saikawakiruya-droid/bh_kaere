@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by &lt;login&gt;.*
+*This project has been created as part of the 42 curriculum by naarai, ksadayas.*
 
 # A-Maze-ing — This is the way
 
@@ -7,7 +7,6 @@ perfect) maze, and writes it to a file as a hex wall representation. It also
 provides ASCII rendering to the terminal and a dedicated validator that checks
 whether the generated result satisfies the conditions.
 
-> ⚠️ Replace `<login>` on line 1 with your own 42 login before submission.
 
 ---
 
@@ -95,6 +94,10 @@ python3 a_maze_ing.py config.txt
 > broken, so a virtual environment is created with `uv`. To run locally, after
 > `uv venv .venv && uv pip install --python .venv flake8 mypy pytest`, you can
 > override Python like `make run PYTHON=.venv/Scripts/python.exe` (Windows).
+
+> Note: `flake8` is configured with `max-line-length = 100` in `setup.cfg`
+> (a deliberate relaxation of the default 79 to keep docstrings and type hints
+> readable). `make lint` runs `flake8 .` and `mypy .` with the subject's flags.
 
 ### Validating the output file
 
@@ -224,22 +227,44 @@ Main modules:
 - `display.py` — ASCII rendering and display-mode registry
 - `validator.py` — condition checks
 
-> Packaging as a single-file `pip` package (`mazegen-*`) is future work.
+The generator is also shipped as a self-contained, single-file `pip` package
+(`mazegen.py`). Pre-built artifacts (`mazegen-1.0.0-py3-none-any.whl` and
+`mazegen-1.0.0.tar.gz`) are at the repository root, and the package can be
+rebuilt from source with `python -m build` (see `pyproject.toml`). It is
+released under the MIT license (`LICENSE.md`), which explicitly allows reuse by
+later 42 projects.
+
+```python
+from mazegen import MazeGenerator
+
+gen = MazeGenerator(20, 15, seed=1, perfect=False).generate()
+grid = gen.grid                       # 2D array of 4-bit wall codes
+path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
+```
 
 ---
 
 ## Team and project management
 
-- **Members and roles:** (fill in)
+- **Members and roles:**
+  - **naarai** — core & generation: `maze.py` (wall model, BFS/solve),
+    `generator.py` (recursive backtracker), `braiding.py` (non-perfect board),
+    and the `mazegen` reusable package.
+  - **ksadayas** — I/O & verification: `config.py` / `options.py` / `errors.py`
+    (config parsing), `writer.py`, `validator.py`, `display.py` (ASCII +
+    interaction), tests, and docs.
+  - _(Adjust the split above to match how the work was actually shared.)_
 - **Plan and evolution:** Built incrementally in the order
   "solving → initialization (42) → generation → output → display → validation",
   committing each feature in small steps.
 - **What went well:** Concentrating the wall representation in a single place
   (`maze.py`) avoided discrepancies between generation, display, output, and
   validation. Layering exceptions into fatal/non-fatal made errors easy to
-  distinguish.
-- **What could improve:** `PERFECT=False` braiding, post-processing for 2-cell
-  passage width, MLX display, and packaging remain as open tasks.
+  distinguish. The `PERFECT=False` board reaches the no-dead-end bonus grade:
+  `maze_analyzer.py` reports it as `Pac-Man-USABLE` with 0 real dead-ends.
+- **What could improve:** Only the recursive backtracker is implemented (the
+  `ALGORITHMS` registry is ready for Prim/Kruskal as a bonus), and the visual
+  layer is ASCII-only — an MLX display remains an open task.
 
 ---
 
