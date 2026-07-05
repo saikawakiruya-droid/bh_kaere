@@ -205,7 +205,8 @@ def initialize_maze(width: int, height: int,
                     entry: Optional[Coord] = None,
                     exit_: Optional[Coord] = None,
                     sign: str = "42",
-                    gap: Optional[int] = None
+                    gap: Optional[int] = None,
+                    avoid_extra: Optional[Iterable[Coord]] = None
                     ) -> Tuple[Maze, Set[Coord]]:
     """Build an all-closed maze and reserve the "42" sign cells.
 
@@ -226,6 +227,9 @@ def initialize_maze(width: int, height: int,
         sign: The string to embed.
         gap: Digit gap (``MIN_GAP``-``MAX_GAP``). ``None`` to auto-select
             based on the width.
+        avoid_extra: Extra cells the sign must not overlap. Used by the
+            playable ``PERFECT=False`` mode to keep the four corners and the
+            centre free (spec IV.4), so they can become open corridors.
 
     Returns:
         A ``(maze, reserved)`` tuple. ``maze`` is the all-closed maze, and
@@ -233,6 +237,8 @@ def initialize_maze(width: int, height: int,
     """
     maze = Maze(width, height)
     avoid = {c for c in (entry, exit_) if c is not None}
+    if avoid_extra is not None:
+        avoid |= set(avoid_extra)
     try:
         reserved = reserved_cells(width, height, sign, avoid, gap)
     except SignTooBigError as err:
