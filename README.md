@@ -42,12 +42,15 @@ whether the generated result satisfies the conditions.
 | `validator.py` | Post-generation condition checks (library + CLI) |
 | `mazegen.py` | Reusable module (single file) |
 | `mazegen-1.0.0-*.whl` / `.tar.gz` | Pre-built packages |
+| `LICENSE.md` | MIT license permitting reuse of the `mazegen` module (spec VI) |
 | `config.txt` / `Makefile` / `pyproject.toml` / `setup.cfg` / `README.md` | Config, build, docs |
-| `examples/` | Sample outputs of initialization maps / generated results |
 
 **For testing (not submitted / graded. Spec III.3):**
 
 - `test_*.py` under `tests/` … for behavior verification. Run with `make test`.
+- `examples/` … sample outputs kept for development only. Every scenario they
+  cover is reproduced by the "Usage examples" section below, so the directory
+  itself is not part of the submission.
 
 > Because the tests are separated into `tests/`, they are clearly distinct from
 > the submitted code (the `*.py` at the root). The tests are solely for
@@ -104,6 +107,102 @@ python3 a_maze_ing.py config.txt
 ```bash
 python3 validator.py maze.txt
 ```
+
+---
+
+## Usage examples (verification checklist)
+
+The `examples/` directory is not part of the submission, so every scenario can
+be reproduced with the commands below. Each example lists **what to check**, so
+it doubles as an evaluation checklist.
+
+### 1. Standard perfect maze (default `config.txt`)
+
+```bash
+python3 a_maze_ing.py config.txt
+```
+
+- [ ] The ASCII rendering shows the **"42"** pattern near the centre, drawn
+      from fully closed cells.
+- [ ] Entry, exit, and the shortest path are visible in the rendering.
+- [ ] `maze.txt` is written: hex grid (one row per line), one blank line, then
+      3 lines (entry `x,y` / exit `x,y` / path of `N`/`E`/`S`/`W`), every line
+      ending with `\n`.
+- [ ] No `warning:` lines are printed (the built-in post-generation validation
+      passed: connectivity, wall consistency, border walls, no 3x3 open area,
+      exactly one path for `PERFECT=True`).
+- [ ] `python3 validator.py maze.txt` prints `OK`.
+
+### 2. Reproducibility via seed
+
+```bash
+python3 a_maze_ing.py config.txt   # SEED=42 in config.txt
+mv maze.txt run1.txt
+python3 a_maze_ing.py config.txt
+diff maze.txt run1.txt             # no output = identical
+```
+
+- [ ] With the same `SEED`, two runs produce byte-identical output files.
+- [ ] With the `SEED` line removed, runs produce different mazes.
+
+### 3. Playable board (`PERFECT=False`)
+
+```bash
+printf 'WIDTH=25\nHEIGHT=20\nENTRY=0,0\nEXIT=24,19\nOUTPUT_FILE=maze.txt\nPERFECT=False\nSEED=42\n' > imperfect.txt
+python3 a_maze_ing.py imperfect.txt
+```
+
+- [ ] The maze contains loops (`braiding.py`); `validator.py` still reports
+      structural `OK`, and toggling the path display shows alternative corridors.
+- [ ] Full connectivity: no isolated cells besides the "42" pattern.
+- [ ] Spec v2.2 additionally requires an open four corners and centre, at least
+      two independent loops, and only rare dead-ends. See "What could improve"
+      — these are not yet fully guaranteed; check them on the rendering for now.
+
+### 4. Sign relocation when entry/exit sit in the centre
+
+```bash
+printf 'WIDTH=20\nHEIGHT=15\nENTRY=10,7\nEXIT=19,14\nOUTPUT_FILE=maze.txt\nPERFECT=True\nSEED=1\n' > center.txt
+python3 a_maze_ing.py center.txt
+```
+
+- [ ] The "42" is relocated so it does not overlap the entry; no omission
+      warning is printed.
+
+### 5. Maze too small for the sign (spec IV.4 fallback)
+
+```bash
+printf 'WIDTH=5\nHEIGHT=5\nENTRY=0,0\nEXIT=4,4\nOUTPUT_FILE=maze.txt\nPERFECT=True\nSEED=1\n' > tiny.txt
+python3 a_maze_ing.py tiny.txt
+```
+
+- [ ] A console message states the sign is omitted (`warning (does not fit)`).
+- [ ] The maze is still generated, validated, and written normally.
+
+### 6. Error handling (never crashes, spec IV.2)
+
+```bash
+python3 a_maze_ing.py no_such_file.txt   # missing file
+python3 a_maze_ing.py                    # missing argument -> usage
+printf 'WIDTH=20\n' > broken.txt
+python3 a_maze_ing.py broken.txt         # missing required keys
+printf 'WIDTH=20\nHEIGHT=15\nENTRY=0,0\nEXIT=0,0\nOUTPUT_FILE=m.txt\nPERFECT=True\n' > same.txt
+python3 a_maze_ing.py same.txt           # ENTRY == EXIT
+```
+
+- [ ] Each case prints a clear, cause-specific error message (no traceback)
+      and exits with a non-zero code.
+
+### 7. User interactions (spec V)
+
+```bash
+python3 a_maze_ing.py config.txt   # run in an interactive terminal
+```
+
+- [ ] Menu `1`/`2`: regenerate a new maze (auto-incremented or specified seed).
+- [ ] Menu `3`: toggle the shortest-path display on/off.
+- [ ] Menu `4`: cycle the wall color.
+- [ ] Menu `5` (or EOF): quit cleanly.
 
 ---
 
@@ -260,11 +359,15 @@ path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
 - **What went well:** Concentrating the wall representation in a single place
   (`maze.py`) avoided discrepancies between generation, display, output, and
   validation. Layering exceptions into fatal/non-fatal made errors easy to
-  distinguish. The `PERFECT=False` board reaches the no-dead-end bonus grade:
-  `maze_analyzer.py` reports it as `Pac-Man-USABLE` with 0 real dead-ends.
-- **What could improve:** Only the recursive backtracker is implemented (the
-  `ALGORITHMS` registry is ready for Prim/Kruskal as a bonus), and the visual
-  layer is ASCII-only — an MLX display remains an open task.
+  distinguish.
+- **What could improve:** The `PERFECT=False` mode currently only removes some
+  dead ends to add loops (`braiding.py`); it does not yet guarantee the spec
+  v2.2 "playable Pac-Man board" requirements (open four corners and centre, at
+  least two independent loops, and only rare dead-ends), and the subject's
+  `maze_analyzer.py` check is not yet integrated. Only the recursive
+  backtracker is implemented (the `ALGORITHMS` registry is ready for
+  Prim/Kruskal as a bonus), and the visual layer is ASCII-only — an MLX display
+  remains an open task.
 
 ---
 
