@@ -1,8 +1,0 @@
-# 03_playable_wide_30x12.out example config
-WIDTH=30
-HEIGHT=12
-ENTRY=0,0
-EXIT=29,11
-OUTPUT_FILE=03_playable_wide_30x12.out
-PERFECT=False
-SEED=7

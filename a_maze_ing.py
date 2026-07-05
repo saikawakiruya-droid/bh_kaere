@@ -24,7 +24,7 @@ from display import WALL_COLORS, get_display_mode
 from errors import MazeError
 from generator import get_algorithm
 from initializer import initialize_maze
-from maze import Maze, solution_cells, solve
+from maze import Maze, path_to_cells, solve
 from validator import validate
 from writer import write_maze
 
@@ -115,7 +115,10 @@ def run(config_path: str) -> int:
         return 1
     print(f"wrote output file: {config.output_file}")
 
-    path_cells = solution_cells(maze, config.entry, config.exit)
+    # Highlight exactly one shortest path (spec V), not every shortest-path
+    # cell, so a board with loops does not show several overlaid paths.
+    path_cells = (path_to_cells(config.entry, solution)
+                  if solution is not None else set())
     render = get_display_mode(config.options.display)
     print(render(maze, entry=config.entry, exit_=config.exit,
                  path=path_cells, reserved=reserved, show_path=True))
@@ -148,7 +151,9 @@ def interact(config: Config, maze: Maze, reserved: Set[Coord]) -> None:
     seed = config.options.seed if config.options.seed is not None else 0
 
     def show() -> None:
-        path_cells = solution_cells(maze, config.entry, config.exit)
+        sol = solve(maze, config.entry, config.exit)
+        path_cells = (path_to_cells(config.entry, sol)
+                      if sol is not None else set())
         print(render(maze, entry=config.entry, exit_=config.exit,
                      path=path_cells, reserved=reserved,
                      show_path=show_path,

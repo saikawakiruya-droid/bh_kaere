@@ -1,8 +1,0 @@
-# 02_perfect_20x15.out example config
-WIDTH=20
-HEIGHT=15
-ENTRY=0,0
-EXIT=19,14
-OUTPUT_FILE=02_perfect_20x15.out
-PERFECT=True
-SEED=42

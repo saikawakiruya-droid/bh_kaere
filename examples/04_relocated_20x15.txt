@@ -1,8 +1,0 @@
-# 04_relocated_20x15.out example config
-WIDTH=20
-HEIGHT=15
-ENTRY=10,7
-EXIT=0,0
-OUTPUT_FILE=04_relocated_20x15.out
-PERFECT=True
-SEED=42

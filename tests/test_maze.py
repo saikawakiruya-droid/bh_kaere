@@ -14,6 +14,7 @@ from maze import (
     WALL_W,
     Maze,
     bfs_distances,
+    path_to_cells,
     solution_cells,
     solve,
 )
@@ -140,3 +141,23 @@ def test_solved_path_is_walkable() -> None:
     cells[1][1] |= WALL_N
     maze = Maze(2, 2, cells)
     assert solve(maze, (0, 0), (1, 1)) == "SE"
+
+
+def test_path_to_cells_traces_single_path() -> None:
+    # The move string is walked from the entry into exactly len+1 cells.
+    assert path_to_cells((0, 0), "SE") == {(0, 0), (0, 1), (1, 1)}
+    assert path_to_cells((2, 3), "") == {(2, 3)}
+
+
+def test_path_to_cells_is_one_path_within_all_shortest() -> None:
+    # Fully open 3x3 grid: many shortest paths (0,0)->(2,2) exist.
+    maze = Maze(3, 3, _open_grid(3, 3))
+    entry, exit_ = (0, 0), (2, 2)
+    sol = solve(maze, entry, exit_)
+    assert sol is not None
+    single = path_to_cells(entry, sol)
+    union = solution_cells(maze, entry, exit_)
+    # The single traced path has exactly len(sol)+1 cells and is a subset of
+    # the union of every shortest path (which is strictly larger here).
+    assert len(single) == len(sol) + 1
+    assert single < union

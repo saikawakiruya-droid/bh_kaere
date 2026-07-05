@@ -263,3 +263,31 @@ def solution_cells(maze: Maze, entry: Coord, exit_: Coord) -> Set[Coord]:
         c for c, de in d_entry.items()
         if c in d_exit and de + d_exit[c] == best
     }
+
+
+def path_to_cells(entry: Coord, solution: str) -> Set[Coord]:
+    """Return the cells visited by following ``solution`` from ``entry``.
+
+    Unlike :func:`solution_cells` (which returns every cell lying on *any*
+    shortest path, i.e. the union when several exist), this traces the single
+    path described by the ``solution`` move string — the one shortest path the
+    program reports. Renderers use it to highlight exactly **one** shortest
+    path (spec V), so a board with loops never shows several overlaid paths.
+
+    Args:
+        entry: Entry coordinate ``(x, y)`` the moves start from.
+        solution: A move string of ``N`` / ``E`` / ``S`` / ``W`` (e.g. from
+            :func:`solve`). Characters outside those four are ignored.
+
+    Returns:
+        The set of cells on that single path (always includes ``entry``).
+    """
+    x, y = entry
+    cells: Set[Coord] = {(x, y)}
+    for step in solution:
+        if step not in DIRECTIONS:
+            continue
+        dx, dy, _ = DIRECTIONS[step]
+        x, y = x + dx, y + dy
+        cells.add((x, y))
+    return cells
