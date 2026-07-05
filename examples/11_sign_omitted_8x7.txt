@@ -1,0 +1,13 @@
+# 11_sign_omitted_8x7.out example config
+# --- required keys ---
+WIDTH=8
+HEIGHT=7
+ENTRY=0,1
+EXIT=7,6
+OUTPUT_FILE=11_sign_omitted_8x7.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42
