@@ -130,6 +130,63 @@ def _check_no_open_3x3(maze: Maze) -> List[str]:
     return problems
 
 
+def _openings(maze: Maze, x: int, y: int) -> int:
+    """Return the number of open walls (passages) of cell ``(x, y)``."""
+    return sum(1 for d in DIRECTIONS if maze.is_open(x, y, d))
+
+
+def _special_cells(maze: Maze) -> Set[Coord]:
+    """Return the four corners and the centre (Pac-Man corridors, spec IV.4)."""
+    w, h = maze.width, maze.height
+    return {(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, h // 2)}
+
+
+def _check_playable(maze: Maze, entry: Coord,
+                    reserved: Set[Coord]) -> List[str]:
+    """Check the spec v2.2 "playable board" rules for ``PERFECT=False``.
+
+    A default (non-perfect) maze must be usable by a Pac-Man-like game: the
+    four corners and the centre are open corridors, there are at least two
+    independent routes (loops), and dead ends stay rare.
+    """
+    problems: List[str] = []
+
+    # Four corners and centre must be open (free) and reachable corridors.
+    reachable: Set[Coord] = set()
+    if maze.in_bounds(*entry):
+        reachable = set(bfs_distances(maze, entry).keys())
+    for (x, y) in sorted(_special_cells(maze)):
+        if (x, y) in reserved or maze.cells[y][x] == 0xF:
+            problems.append(
+                f"corner/centre is closed, not an open corridor: ({x},{y})"
+            )
+        elif (x, y) not in reachable:
+            problems.append(f"corner/centre is not reachable: ({x},{y})")
+
+    # At least two independent loops (a perfect maze, or one with a single
+    # removed wall, is not acceptable).
+    free_count = maze.width * maze.height - len(reserved)
+    if free_count > 0:
+        loops = _count_open_edges(maze, reserved) - free_count + 1
+        if loops < 2:
+            problems.append(
+                f"playable board needs at least 2 independent loops, "
+                f"found {loops}"
+            )
+
+    # Dead ends should be rare (a couple are tolerated; zero is the bonus).
+    dead = [(x, y)
+            for y in range(maze.height) for x in range(maze.width)
+            if (x, y) not in reserved and _openings(maze, x, y) == 1]
+    threshold = max(4, free_count // 25)
+    if len(dead) > threshold:
+        problems.append(
+            f"too many dead ends for a playable board: {len(dead)} "
+            f"(tolerated up to {threshold})"
+        )
+    return problems
+
+
 def _count_open_edges(maze: Maze, reserved: Set[Coord]) -> int:
     """Count the number of open passages (edges) between free cells."""
     edges = 0
@@ -183,7 +240,8 @@ def _check_solution(maze: Maze, entry: Coord, exit_: Coord,
 def validate(maze: Maze, entry: Coord, exit_: Coord,
              reserved: Optional[Set[Coord]] = None,
              perfect: bool = False,
-             solution: Optional[str] = None) -> List[str]:
+             solution: Optional[str] = None,
+             playable: bool = False) -> List[str]:
     """Validate the maze against all conditions and return the list of problems.
 
     Args:
@@ -193,6 +251,10 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
         reserved: Set of reserved cells ("42"); empty if omitted.
         perfect: Whether a perfect maze is required.
         solution: The attached shortest path (validated if present).
+        playable: Whether the spec v2.2 "playable Pac-Man board" rules apply
+            (open corners/centre, at least two loops, rare dead ends). This is
+            opt-in: the output-file CLI leaves it off because a file does not
+            record the intended mode.
 
     Returns:
         A list of problem messages. Empty means all conditions are satisfied.
@@ -208,6 +270,8 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
     problems += _check_no_open_3x3(maze)
     if perfect:
         problems += _check_perfect(maze, reserved)
+    if playable:
+        problems += _check_playable(maze, entry, reserved)
     if solution is not None:
         problems += _check_solution(maze, entry, exit_, solution)
     return problems
