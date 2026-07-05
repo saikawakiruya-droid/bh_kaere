@@ -17,8 +17,12 @@ whether the generated result satisfies the conditions.
   emerges.
 - When `PERFECT=True`, there is exactly one path between entry and exit (a
   spanning tree).
+- When `PERFECT=False` (the default), it produces a **playable Pac-Man board**
+  (spec IV.4, v2.2): open four corners and centre, at least two independent
+  loops, and only rare dead ends.
 - After generation it automatically validates the conditions (connectivity,
-  wall consistency, border, no 3x3 opening, shortest path, etc.).
+  wall consistency, border, no 3x3 opening, shortest path, and — for
+  `PERFECT=False` — the playable-board rules).
 - The output file uses the spec's hex format and can be checked with the
   bundled validator or the Moulinette.
 
@@ -152,12 +156,12 @@ printf 'WIDTH=25\nHEIGHT=20\nENTRY=0,0\nEXIT=24,19\nOUTPUT_FILE=maze.txt\nPERFEC
 python3 a_maze_ing.py imperfect.txt
 ```
 
-- [ ] The maze contains loops (`braiding.py`); `validator.py` still reports
-      structural `OK`, and toggling the path display shows alternative corridors.
+- [ ] No `warning:` lines are printed: the built-in playable-board validation
+      passed (open four corners and centre, at least two independent loops, and
+      only rare dead ends — spec IV.4, v2.2).
+- [ ] The maze contains loops (`braiding.py`); toggling the path display shows
+      alternative corridors, and `python3 validator.py maze.txt` reports `OK`.
 - [ ] Full connectivity: no isolated cells besides the "42" pattern.
-- [ ] Spec v2.2 additionally requires an open four corners and centre, at least
-      two independent loops, and only rare dead-ends. See "What could improve"
-      — these are not yet fully guaranteed; check them on the rendering for now.
 
 ### 4. Sign relocation when entry/exit sit in the centre
 
@@ -269,6 +273,26 @@ The algorithm can be selected with the `ALGORITHM` key (currently only
 `backtracker`); the design lets you register e.g. Prim's or Kruskal's algorithm
 in `ALGORITHMS` of `generator.py` and select it directly.
 
+### Playable board when `PERFECT=False` (spec IV.4, v2.2)
+
+The default mode must be a board usable by a Pac-Man-like game, not just a maze
+with a few loops. After the backtracker builds a spanning tree, `braiding.py`
+reshapes it in three phases:
+
+1. **Dead-end reduction** — each dead end opens one wall to connect elsewhere,
+   so a chased player is rarely trapped.
+2. **Corridor enforcement** — the four corners and the centre (kept free of the
+   "42" sign by `initializer.py`) are given at least two openings, so the
+   ghosts' corners and the player's central start are real corridors.
+3. **Loop guarantee** — extra walls are opened until there are **at least two
+   independent loops** (a perfect maze, or one with a single removed wall, is
+   rejected).
+
+Every wall removal is checked so it never creates a fully open 3x3 area, and
+reserved "42" cells are never touched. Connectivity is preserved because walls
+are only opened. Reaching **zero** dead ends is the subject's bonus; the
+generator keeps them rare (typically a couple).
+
 ### Solving: BFS (breadth-first search)
 
 It computes the shortest distance from the entry and the exit to each cell, and
@@ -288,11 +312,17 @@ IV.4 conditions:
 - Every cell except the "42" (`0xF` closed cells) is connected
 - No fully open 3x3 area (passages are at most 2 cells wide)
 - When `PERFECT`, exactly one path (no cycles)
+- When `PERFECT=False` (opt-in `playable` check): the four corners and centre
+  are open corridors, there are at least two independent loops, and dead ends
+  stay rare
 - The attached shortest path is actually walkable and shortest
 
 The main program runs this validation right after generation and warns on any
-problem. It can be used both as a library (`validate()`) and as a CLI
-(`python3 validator.py <file>`).
+problem. It can be used both as a library (`validate()`, with a `playable`
+flag) and as a CLI (`python3 validator.py <file>`). The CLI validates structure
+only, because an output file does not record the intended mode; the subject's
+`maze_analyzer.py` (not bundled here) can additionally classify a file as
+perfect or playable.
 
 ---
 
@@ -359,15 +389,15 @@ path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
 - **What went well:** Concentrating the wall representation in a single place
   (`maze.py`) avoided discrepancies between generation, display, output, and
   validation. Layering exceptions into fatal/non-fatal made errors easy to
-  distinguish.
-- **What could improve:** The `PERFECT=False` mode currently only removes some
-  dead ends to add loops (`braiding.py`); it does not yet guarantee the spec
-  v2.2 "playable Pac-Man board" requirements (open four corners and centre, at
-  least two independent loops, and only rare dead-ends), and the subject's
-  `maze_analyzer.py` check is not yet integrated. Only the recursive
-  backtracker is implemented (the `ALGORITHMS` registry is ready for
-  Prim/Kruskal as a bonus), and the visual layer is ASCII-only — an MLX display
-  remains an open task.
+  distinguish. The `PERFECT=False` mode meets the spec v2.2 playable-board
+  rules (open four corners and centre, at least two independent loops, rare
+  dead ends), enforced in `braiding.py` and confirmed by `validator.py`.
+- **What could improve:** Dead ends are kept rare but not driven to zero, so
+  the "no dead end at all" bonus is not yet reached. The subject's
+  `maze_analyzer.py` is not bundled, so cross-checking with it is manual. Only
+  the recursive backtracker is implemented (the `ALGORITHMS` registry is ready
+  for Prim/Kruskal as a bonus), and the visual layer is ASCII-only — an MLX
+  display remains an open task.
 
 ---
 
