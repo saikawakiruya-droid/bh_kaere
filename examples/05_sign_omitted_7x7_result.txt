@@ -1,0 +1,34 @@
+# 05_sign_omitted_7x7: 7x7 PERFECT=True entry=(0, 0) exit=(6, 6) seed=42 (perfect maze)
+# reserved cells (42) = 0
+# validation: OK (no problems)
+# note: warning (cannot place): no position can place sign '42' (it would overlap the entry/exit or disconnect the maze) / omitting sign '42'
+
+== Output file (spec IV.5: hex grid, blank line, entry / exit / shortest path) ==
+D539553
+97C693A
+A9396AA
+AAC47AA
+AA9396A
+AAAAC3A
+C46C7C6
+
+0,0
+6,6
+EESENEEESSSSSS
+
+== ASCII rendering (E=entry, X=exit, *=path, #=42) ==
++---+---+---+---+---+---+---+
+| E   *   * | *   *   *   * |
++---+---+   +   +---+---+   +
+|       | *   * |       | * |
++   +---+---+---+   +   +   +
+|   |       |       |   | * |
++   +   +   +   +---+   +   +
+|   |   |           |   | * |
++   +   +---+---+---+   +   +
+|   |   |       |       | * |
++   +   +   +   +   +---+   +
+|   |   |   |   |       | * |
++   +   +   +   +---+   +   +
+|           |       |     X |
++---+---+---+---+---+---+---+
