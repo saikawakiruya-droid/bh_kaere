@@ -31,12 +31,26 @@ from writer import write_maze
 Coord = Tuple[int, int]
 
 
+# Minimum independent loops required for a playable board (spec IV.4, v2.2).
+PLAYABLE_MIN_LOOPS = 2
+
+
+def _corridor_cells(width: int, height: int) -> Set[Coord]:
+    """Return the four corners and the centre (playable-board corridors)."""
+    return {
+        (0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1),
+        (width // 2, height // 2),
+    }
+
+
 def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
     """Build the maze from the config (init -> reserve sign -> generate -> braid).
 
-    When ``PERFECT=False``, braiding runs after generation to reduce dead ends
-    and create loops (multiple paths), while keeping passages at most 2 cells
-    wide.
+    When ``PERFECT=False`` the maze is shaped into a playable Pac-Man board
+    (spec IV.4, v2.2): the four corners and the centre are kept free of the
+    "42" sign and turned into open corridors, dead ends are reduced, and at
+    least two independent loops are guaranteed — all while keeping passages at
+    most 2 cells wide.
 
     Args:
         config: The validated configuration.
@@ -45,14 +59,17 @@ def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
         ``(maze, reserved)``, where ``reserved`` is the "42" reserved-cell set.
     """
     rng = random.Random(config.options.seed)
+    corridors = (None if config.perfect
+                 else _corridor_cells(config.width, config.height))
     _, reserved = initialize_maze(
         config.width, config.height,
         entry=config.entry, exit_=config.exit,
-        sign=config.options.sign)
+        sign=config.options.sign, avoid_extra=corridors)
     generate = get_algorithm(config.options.algorithm)
     maze = generate(config.width, config.height, reserved, rng, config.entry)
     if not config.perfect:
-        braid(maze, reserved, rng)
+        braid(maze, reserved, rng,
+              corridors=corridors, min_loops=PLAYABLE_MIN_LOOPS)
     return maze, reserved
 
 
@@ -79,10 +96,11 @@ def run(config_path: str) -> int:
 
     solution = solve(maze, config.entry, config.exit)
 
-    # Confirm post-generation that the conditions hold (spec IV.4).
+    # Confirm post-generation that the conditions hold (spec IV.4). For
+    # PERFECT=False, also check the playable Pac-Man board rules.
     problems = validate(maze, config.entry, config.exit,
                         reserved=reserved, perfect=config.perfect,
-                        solution=solution)
+                        solution=solution, playable=not config.perfect)
     if problems:
         print(f"warning: the generated maze fails {len(problems)} condition(s):",
               file=sys.stderr)
