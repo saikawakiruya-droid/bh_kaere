@@ -3,7 +3,7 @@
 # Main targets: install / run / debug / clean / lint / lint-strict / test
 #
 # The Python used can be overridden via the PYTHON variable. Example:
-#   make run PYTHON=.venv/Scripts/python.exe CONFIG=config.txt
+#   make run PYTHON=python3.11 CONFIG=config.txt
 
 PYTHON ?= python3
 CONFIG ?= config.txt

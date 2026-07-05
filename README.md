@@ -97,10 +97,8 @@ To run directly:
 python3 a_maze_ing.py config.txt
 ```
 
-> Note: In this repository's development environment the system `python` was
-> broken, so a virtual environment is created with `uv`. To run locally, after
-> `uv venv .venv && uv pip install --python .venv flake8 mypy pytest`, you can
-> override Python like `make run PYTHON=.venv/Scripts/python.exe` (Windows).
+> Note: `make` targets use `python3` by default. To run with a different
+> interpreter, override the `PYTHON` variable, e.g. `make run PYTHON=python3.11`.
 
 > Note: `flake8` is configured with `max-line-length = 100` in `setup.cfg`
 > (a deliberate relaxation of the default 79 to keep docstrings and type hints
