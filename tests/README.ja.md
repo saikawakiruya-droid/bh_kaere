@@ -199,6 +199,19 @@ python3 a_maze_ing.py same.txt           # ENTRY == EXIT
 python3 a_maze_ing.py config.txt   # 対話ターミナルで実行
 ```
 
+迷路を描画した後、対話メニューが表示される（stdin/stdout が実端末のときだけ。
+パイプ実行では自動処理が止まらないようスキップされる）：
+
+```text
+=== A-Maze-ing ===
+1. Regenerate a new maze (next seed: 43)   ← 新しい迷路を再生成（seed 自動+1）
+2. Regenerate with a specified seed         ← seed を指定して再生成
+3. Toggle the shortest-path display         ← 最短経路の表示 ON/OFF
+4. Change the wall color (current: none)    ← 壁の色を順に変更
+5. Quit (current seed: 42)                  ← 終了
+choice (1-5):
+```
+
 - [ ] メニュー `1`/`2`：新しい迷路を再生成（自動加算 or 指定 seed）。
 - [ ] メニュー `3`：最短経路表示の ON/OFF 切り替え。
 - [ ] メニュー `4`：壁の色を順に変更。

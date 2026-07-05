@@ -201,6 +201,19 @@ python3 a_maze_ing.py same.txt           # ENTRY == EXIT
 python3 a_maze_ing.py config.txt   # run in an interactive terminal
 ```
 
+After the maze is drawn, an interactive menu is shown (only when stdin/stdout
+is a real terminal — it is skipped for pipes so automated runs never hang):
+
+```text
+=== A-Maze-ing ===
+1. Regenerate a new maze (next seed: 43)
+2. Regenerate with a specified seed
+3. Toggle the shortest-path display
+4. Change the wall color (current: none)
+5. Quit (current seed: 42)
+choice (1-5):
+```
+
 - [ ] Menu `1`/`2`: regenerate a new maze (auto-incremented or specified seed).
 - [ ] Menu `3`: toggle the shortest-path display on/off.
 - [ ] Menu `4`: cycle the wall color.
