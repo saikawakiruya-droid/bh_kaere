@@ -17,7 +17,7 @@ whether the generated result satisfies the conditions.
   emerges.
 - When `PERFECT=True`, there is exactly one path between entry and exit (a
   spanning tree).
-- When `PERFECT=False` (the default), it produces a **playable Pac-Man board**
+- When `PERFECT=False`, it produces a **playable Pac-Man board**
   (spec IV.4, v2.2): open four corners and centre, at least two independent
   loops, and only rare dead ends.
 - After generation it automatically validates the conditions (connectivity,
@@ -286,8 +286,9 @@ in `ALGORITHMS` of `generator.py` and select it directly.
 
 ### Playable board when `PERFECT=False` (spec IV.4, v2.2)
 
-The default mode must be a board usable by a Pac-Man-like game, not just a maze
-with a few loops. After the backtracker builds a spanning tree, `braiding.py`
+The `PERFECT=False` mode must be a board usable by a Pac-Man-like game, not
+just a maze with a few loops. After the backtracker builds a spanning tree,
+`braiding.py`
 reshapes it in three phases:
 
 1. **Dead-end reduction** — each dead end opens one wall to connect elsewhere,
