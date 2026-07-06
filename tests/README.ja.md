@@ -96,11 +96,11 @@ make lint
 python3 a_maze_ing.py config.txt
 ```
 
-> 注記：本リポジトリの開発環境では system の `python` が壊れていたため、
-> `uv` で仮想環境を作成している。ローカル実行時は
-> `uv venv .venv && uv pip install --python .venv flake8 mypy pytest` の後、
-> `make run PYTHON=.venv/Scripts/python.exe`（Windows）のように Python を
-> 上書きできる。
+> 注記：`make install` は隔離した仮想環境 `./.venv` を作成し（`uv` があれば
+> 優先、なければ標準の `venv`）、`make run` / `make test` / `make lint` はその
+> 環境の Python を自動で使う。Python バージョンは `PY_VERSION`（既定 `3.12`）で
+> 指定でき、無い環境では利用可能な `python3` に自動フォールバックするため、
+> どんな環境でも動く。`.venv` は `make distclean` で削除できる。
 
 > 注記：`flake8` は `setup.cfg` で `max-line-length = 100` に設定している
 > （docstring と型ヒントの可読性のため、既定の 79 を意図的に緩めている）。

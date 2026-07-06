@@ -97,8 +97,13 @@ To run directly:
 python3 a_maze_ing.py config.txt
 ```
 
-> Note: `make` targets use `python3` by default. To run with a different
-> interpreter, override the `PYTHON` variable, e.g. `make run PYTHON=python3.11`.
+> Note: `make install` builds an isolated virtual environment in `./.venv`
+> (preferring `uv`, falling back to the stdlib `venv`), and `run` / `debug` /
+> `test` / `lint` use that environment automatically. The Python version is
+> pinned via `PY_VERSION` (default `3.12`, e.g. `make install PY_VERSION=3.11`).
+> It is only a preference — on a machine without that version the build falls
+> back to any available `python3`, so `make` works in any environment. Remove
+> the environment with `make distclean`.
 
 > Note: `flake8` is configured with `max-line-length = 100` in `setup.cfg`
 > (a deliberate relaxation of the default 79 to keep docstrings and type hints
