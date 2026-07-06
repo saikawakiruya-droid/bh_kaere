@@ -9,21 +9,22 @@
 ## 実行方法
 
 ```bash
-# 依存ツール（flake8 / mypy / pytest）を入れる
+# 隔離した仮想環境 ./.venv を作り、依存ツール（flake8 / mypy / pytest）を入れる
 make install
 
-# 全テスト実行
-make test           # = python3 -m pytest -q
+# 全テスト実行（.venv の python で pytest を実行）
+make test
 
 # 個別ファイル / 個別関数だけ実行
-python3 -m pytest tests/test_playable.py -q
-python3 -m pytest tests/test_playable.py::test_at_least_two_independent_loops -q
+.venv/bin/python -m pytest tests/test_playable.py -q
+.venv/bin/python -m pytest tests/test_playable.py::test_at_least_two_independent_loops -q
 ```
 
-> このリポジトリの開発環境では system の `python` が壊れていたため、venv を
-> 使う。Windows の例:
-> `uv venv .venv && uv pip install --python .venv flake8 mypy pytest` の後、
-> `.venv/Scripts/python.exe -m pytest -q`。
+> `make install` は隔離した仮想環境 `./.venv` を作成し（`uv` があれば優先、
+> なければ標準の `venv`）、`make test` / `make lint` / `make run` はその環境の
+> Python を自動で使う。Python バージョンは `PY_VERSION`（既定 `3.12`）で指定でき、
+> 無い環境では利用可能な `python3` に自動フォールバックするため、どんな環境でも
+> `make` が動く。`.venv` は `make distclean` で削除できる。
 
 **確認できればよいこと:** 最後に `N passed` と表示され、`failed` / `error` が
 0 件であること。
@@ -43,7 +44,8 @@ python3 -m pytest tests/test_playable.py::test_at_least_two_independent_loops -q
    提出・評価環境の Python が 3.10 未満だと `from __future__` 以外の新しい
    構文や型注釈で動かない可能性があるため、必ず確認する。
 
-2. **依存ツール導入**： `make install`（pip/uv で flake8・mypy・pytest）。
+2. **依存ツール導入**： `make install`（隔離 venv `./.venv` を作り、uv/pip で
+   flake8・mypy・pytest を導入。`PY_VERSION` でバージョン指定可）。
 
 3. **lint 通過（仕様 III.1 / III.2）**
 
@@ -57,7 +59,7 @@ python3 -m pytest tests/test_playable.py::test_at_least_two_independent_loops -q
 5. **実行確認（PERFECT=True）**
 
    ```bash
-   make run           # = python3 a_maze_ing.py config.txt
+   make run           # .venv の python で a_maze_ing.py config.txt を実行
    ```
 
    `warning:` が出ず、`wrote output file: maze.txt` が出ること。ASCII 表示に
