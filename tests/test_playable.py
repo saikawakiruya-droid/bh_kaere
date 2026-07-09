@@ -10,14 +10,11 @@ import pytest
 
 from a_maze_ing import PLAYABLE_MIN_LOOPS, _corridor_cells, build_maze
 from config import Config, Options
-from engine.build import (
-    braid,
-    count_dead_ends,
-    count_loops,
-    generate_backtracker,
-    reserved_cells,
-)
+from engine.backtracker import generate_backtracker
+from engine.braiding import braid
+from engine.initializer import reserved_cells
 from engine.maze import Maze
+from engine.metrics import count_dead_ends, count_loops
 from engine.validator import validate
 
 Coord = Tuple[int, int]

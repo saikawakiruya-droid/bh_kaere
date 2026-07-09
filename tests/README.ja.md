@@ -50,8 +50,14 @@ import できる（詳細は後述「再利用できるコード」参照）：
 | モジュール | 役割 |
 |------|------|
 | `engine/maze.py` | コア（壁表現、開閉、BFS 距離、最短経路） |
-| `engine/build.py` | 「42」サイン予約+初期マップ、生成アルゴリズム、braiding（`PERFECT=False`） |
-| `engine/output.py` | 出力ファイル書き出し（16進形式）+ ASCII 描画 |
+| `engine/initializer.py` | 「42」サイン予約+初期マップ |
+| `engine/backtracker.py` | recursive backtracker 生成アルゴリズム |
+| `engine/generator.py` | アルゴリズム選択レジストリ（`ALGORITHM` 設定キー） |
+| `engine/braiding.py` | 不完全迷路化・プレイアブル盤面変換（`PERFECT=False`） |
+| `engine/metrics.py` | ループ数・デッドエンド数の計測（braiding とバリデータが共用） |
+| `engine/writer.py` | 出力ファイル書き出し（16進形式） |
+| `engine/ascii_display.py` | ASCII 描画 |
+| `engine/display.py` | 表示モード選択レジストリ（`DISPLAY` 設定キー） |
 | `engine/validator.py` | 生成後の条件チェック（ライブラリ + CLI） |
 | `engine/errors.py` | 例外階層 |
 
@@ -161,9 +167,8 @@ python3 a_maze_ing.py imperfect.txt
 
 - [ ] `warning:` 行が出ない：内蔵のプレイアブル盤面検証が通過（四隅と中央が
       開通、独立ループ2本以上、デッドエンドは稀 — 仕様 IV.4, v2.2）。
-- [ ] 迷路にループがある（`engine/build.py` の braiding セクション）。経路表示
-      をトグルすると別ルートが見え、`python3 -m engine.validator maze.txt` が
-      `OK` を返す。
+- [ ] 迷路にループがある（`engine/braiding.py`）。経路表示をトグルすると
+      別ルートが見え、`python3 -m engine.validator maze.txt` が `OK` を返す。
 - [ ] 完全連結：「42」以外に孤立セルがない。
 
 ### 4. 入口/出口が中央にあるときのサイン再配置
@@ -282,19 +287,20 @@ choice (1-5):
 - 「42」の予約セルを掘らないだけで、サインが通路の中に残る。
 
 生成アルゴリズムは `ALGORITHM` キーで選択できる（現状は `backtracker`
-のみ）。設計上は `engine/build.py` の `ALGORITHMS` に Prim 法や Kruskal 法など
-を登録して直接選べるようにしてある。
+のみ）。設計上は `engine/backtracker.py` の隣に新しいアルゴリズムを追加し、
+`engine/generator.py` の `ALGORITHMS` に Prim 法や Kruskal 法などを登録して
+直接選べるようにしてある。
 
 ### `PERFECT=False` のプレイアブル盤面（仕様 IV.4, v2.2）
 
 `PERFECT=False` モードは、単にループが数本ある迷路ではなく、Pac-Man 的ゲームで
-使える盤面でなければならない。backtracker で全域木を作った後、`engine/build.py`
-の braiding セクションが3フェーズで整形する：
+使える盤面でなければならない。backtracker で全域木を作った後、
+`engine/braiding.py` が3フェーズで整形する：
 
 1. **デッドエンド削減** — 各行き止まりが壁を1枚開けて他とつながり、追われる
    プレイヤーが罠にかかりにくくなる。
-2. **通路化の強制** — 四隅と中央（`engine/build.py` のサイン予約セクションが
-   「42」から除外して確保）を2開口以上にし、ゴーストの四隅とプレイヤーの
+2. **通路化の強制** — 四隅と中央（`engine/initializer.py` が「42」から除外
+   して確保）を2開口以上にし、ゴーストの四隅とプレイヤーの
    中央スタートを本物の通路にする。
 3. **ループ保証** — 独立ループが**2本以上**になるまで壁を追加で開ける
    （完全迷路や、壁を1枚だけ抜いたもの＝単一ループは不合格）。
@@ -351,7 +357,8 @@ from engine.maze import Maze, solve, solution_cells
 
 # 生成（サイン予約 + recursive backtracker）だけ
 import random
-from engine.build import reserved_cells, generate_backtracker
+from engine.initializer import reserved_cells
+from engine.backtracker import generate_backtracker
 
 reserved = reserved_cells(25, 20)
 maze = generate_backtracker(25, 20, reserved, random.Random(42), start=(0, 0))
@@ -363,7 +370,8 @@ from engine.validator import validate
 problems = validate(maze, (0, 0), (24, 19))
 
 # ファイル出力/ターミナル表示だけ
-from engine.output import write_maze, render_ascii
+from engine.writer import write_maze
+from engine.ascii_display import render_ascii
 ```
 
 あるいはパッケージ直下からまとめて import：
@@ -374,10 +382,16 @@ from engine import Maze, generate_backtracker, braid, validate, write_maze, rend
 
 モジュール：
 
-- `engine/maze.py` — 壁表現（`Maze`）、`open_wall`、`bfs_distances`、`solve`、`solution_cells`
-- `engine/build.py` — 「42」サイン予約+初期マップ、生成アルゴリズムとレジストリ、braiding
+- `engine/maze.py` — コアの `Maze` クラス（`open_wall`、`bfs_distances`、`solve`、`solution_cells`）
+- `engine/initializer.py` — 「42」サイン予約+初期マップ
+- `engine/backtracker.py` — recursive backtracker 生成アルゴリズム
+- `engine/generator.py` — アルゴリズム選択レジストリ（`get_algorithm`、`algorithm_names`）
+- `engine/braiding.py` — 不完全迷路化・プレイアブル盤面変換
+- `engine/metrics.py` — ループ数・デッドエンド数の計測（braiding とバリデータが共用）
 - `engine/validator.py` — 条件チェック（ライブラリ + CLI）
-- `engine/output.py` — 出力ファイル書き出し（16進形式）+ ASCII 描画と表示レジストリ
+- `engine/writer.py` — 出力ファイル書き出し（16進形式）
+- `engine/ascii_display.py` — ASCII 描画
+- `engine/display.py` — 表示モード選択レジストリ（`get_display_mode`、`display_names`）
 - `engine/errors.py` — 上記が共有する例外階層
 
 生成器は、自己完結した単一ファイルの `pip` パッケージ（`mazegen.py`）
@@ -401,11 +415,11 @@ path = gen.solution((0, 0), (19, 14)) # 最短経路 "N/E/S/W"
 
 - **メンバーと役割：**
   - **naarai** — コア & 生成：`engine/maze.py`（壁モデル、BFS/求解）、
-    `engine/build.py` の生成・braiding セクション（recursive backtracker、
+    `engine/backtracker.py` / `engine/braiding.py`（recursive backtracker、
     不完全盤面）、および `mazegen` 再利用パッケージ。
   - **ksadayas** — 入出力 & 検証：`config.py` / `engine/errors.py`
-    （設定解析）、`engine/output.py`、`engine/validator.py`（ASCII + 対話）、
-    テスト、ドキュメント。
+    （設定解析）、`engine/writer.py` / `engine/ascii_display.py`、
+    `engine/validator.py`（ASCII + 対話）、テスト、ドキュメント。
   - _(上の分担は実際の作業分担に合わせて調整すること。)_
 - **計画と変遷：** 「求解 → 初期化(42) → 生成 → 出力 → 表示 → 検証」の順に
   段階的に構築し、機能ごとに小さくコミットした。
@@ -413,8 +427,8 @@ path = gen.solution((0, 0), (19, 14)) # 最短経路 "N/E/S/W"
   生成・表示・出力・検証の間の食い違いを防げた。例外を致命/非致命に階層化
   したことでエラーを区別しやすくなった。`PERFECT=False` モードは仕様 v2.2 の
   プレイアブル盤面規則（四隅と中央の開通、独立ループ2本以上、デッドエンド
-  稀）を満たし、`engine/build.py` の braiding セクションで強制し
-  `engine/validator.py` で確認している。
+  稀）を満たし、`engine/braiding.py` で強制し `engine/validator.py` で
+  確認している。
 - **改善できる点：** デッドエンドは稀に抑えているが0にはしていないため、
   「デッドエンド皆無」ボーナスには未到達。課題付属の `maze_analyzer.py` を
   同梱していないため、それとの突き合わせは手作業。生成アルゴリズムは

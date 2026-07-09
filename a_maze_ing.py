@@ -19,11 +19,15 @@ import sys
 from typing import List, Optional, Set, Tuple
 
 from config import Config, parse_config
-from engine.build import braid, get_algorithm, initialize_maze
+from engine.ascii_display import WALL_COLORS
+from engine.braiding import braid
+from engine.display import get_display_mode
 from engine.errors import MazeError
+from engine.generator import get_algorithm
+from engine.initializer import initialize_maze
 from engine.maze import Maze, path_to_cells, solve
-from engine.output import WALL_COLORS, get_display_mode, write_maze
 from engine.validator import validate
+from engine.writer import write_maze
 
 Coord = Tuple[int, int]
 

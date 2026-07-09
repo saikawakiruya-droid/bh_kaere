@@ -45,6 +45,7 @@ from engine.maze import (
     Maze,
     bfs_distances,
 )
+from engine.metrics import count_loops
 
 Coord = Tuple[int, int]
 
@@ -140,11 +141,6 @@ def _check_no_open_3x3(maze: Maze) -> List[str]:
     return problems
 
 
-def _openings(maze: Maze, x: int, y: int) -> int:
-    """Return the number of open walls (passages) of cell ``(x, y)``."""
-    return sum(1 for d in DIRECTIONS if maze.is_open(x, y, d))
-
-
 def _special_cells(maze: Maze) -> Set[Coord]:
     """Return the four corners and the centre (Pac-Man corridors, spec IV.4)."""
     w, h = maze.width, maze.height
@@ -175,17 +171,17 @@ def _check_playable(maze: Maze, entry: Coord,
             )
         elif (x, y) not in reachable:
             problems.append(f"corner/centre is not reachable: ({x},{y})")
-        elif _openings(maze, x, y) < 2:
+        elif maze.count_openings(x, y) < 2:
             problems.append(
                 f"corner/centre is a dead end, not an open corridor: "
-                f"({x},{y}) has {_openings(maze, x, y)} opening(s)"
+                f"({x},{y}) has {maze.count_openings(x, y)} opening(s)"
             )
 
     # At least two independent loops (a perfect maze, or one with a single
     # removed wall, is not acceptable).
     free_count = maze.width * maze.height - len(reserved)
     if free_count > 0:
-        loops = _count_open_edges(maze, reserved) - free_count + 1
+        loops = count_loops(maze, reserved)
         if loops < 2:
             problems.append(
                 f"playable board needs at least 2 independent loops, "
@@ -195,7 +191,7 @@ def _check_playable(maze: Maze, entry: Coord,
     # Dead ends should be rare (a couple are tolerated; zero is the bonus).
     dead = [(x, y)
             for y in range(maze.height) for x in range(maze.width)
-            if (x, y) not in reserved and _openings(maze, x, y) == 1]
+            if (x, y) not in reserved and maze.count_openings(x, y) == 1]
     threshold = max(4, free_count // 25)
     if len(dead) > threshold:
         problems.append(

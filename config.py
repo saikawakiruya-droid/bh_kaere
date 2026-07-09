@@ -26,14 +26,15 @@ import sys
 from dataclasses import dataclass
 from typing import Dict, Optional, Set, Tuple
 
-from engine.build import GLYPHS, algorithm_names
+from engine.display import display_names
 from engine.errors import (
     ConfigError,
     ConfigKeyError,
     ConfigParseError,
     ConfigValueError,
 )
-from engine.output import display_names
+from engine.generator import algorithm_names
+from engine.initializer import GLYPHS
 
 Coord = Tuple[int, int]
 

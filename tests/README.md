@@ -83,10 +83,12 @@ make test
 
 10. **提出フォルダに入れる / 入れないの仕分け**
     - **入れる**：直下の `*.py`（`a_maze_ing.py`、`config.py` ほか）、
-      `engine/`（`__init__.py` / `maze.py` / `build.py` / `output.py` /
-      `validator.py` / `errors.py`）、`config.txt`、`Makefile`、
-      `pyproject.toml`、`setup.cfg`、`README.md`、`LICENSE.md`、
-      `mazegen-1.0.0-*.whl` / `.tar.gz`、パッケージ再ビルドに必要な一式。
+      `engine/`（`__init__.py` / `maze.py` / `initializer.py` /
+      `backtracker.py` / `generator.py` / `braiding.py` / `metrics.py` /
+      `validator.py` / `writer.py` / `ascii_display.py` / `display.py` /
+      `errors.py`）、`config.txt`、`Makefile`、`pyproject.toml`、`setup.cfg`、
+      `README.md`、`LICENSE.md`、`mazegen-1.0.0-*.whl` / `.tar.gz`、
+      パッケージ再ビルドに必要な一式。
     - **入れない**：`tests/`（このディレクトリ）、`examples/`、
       `a_maze_ing.pdf`、`ISSUES.md`、`TASKS.md`、`a_maze_ing.md`、`.venv/`、
       `__pycache__/`、`.mypy_cache/`、`.pytest_cache/`。
@@ -116,27 +118,7 @@ make test
 | `test_solution_cells_*` | 最短経路上セル集合が正しい／到達不能で空 |
 | `test_solved_path_is_walkable` | 返した経路が実際に壁を通らず歩ける |
 
-### test_build.py — 初期化・生成・braiding（`engine/build.py`）
-
-`engine/build.py` は「42」サイン予約+初期化 / 生成アルゴリズム / braiding の
-3 セクションを1ファイルにまとめたモジュールで、旧 `test_generator.py` /
-`test_initializer.py` / `test_braiding.py` を統合したテストファイル。
-
-**生成（recursive backtracker）**
-
-| 関数 | 確認できること |
-|------|------|
-| `test_all_free_cells_connected` | 予約以外の全セルが連結 |
-| `test_reserved_cells_stay_fully_walled` | 予約セル（42）は 0xF のまま |
-| `test_perfect_maze_is_spanning_tree` | 辺数=セル数-1 の全域木（完全迷路） |
-| `test_seed_reproducibility` | 同 seed で同一結果 |
-| `test_different_seeds_differ` | 別 seed で別結果 |
-| `test_no_reserved_connects_all` | 予約なしでも全連結 |
-| `test_registry_has_backtracker` | アルゴリズム登録に backtracker がある |
-| `test_unknown_algorithm_raises` | 未知アルゴリズム名で例外 |
-| `test_wall_consistency_after_generation` | 生成後も隣接壁が整合 |
-
-**初期化と「42」配置**
+### test_initializer.py — 初期化と「42」配置（`engine/initializer.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -152,7 +134,21 @@ make test
 | `test_too_small_and_overlap_are_distinct` | 2 種のエラーが区別される |
 | `test_initialize_maze_*` | 全閉+予約の初期化、省略/再配置時の挙動 |
 
-**braiding（不完全迷路化・ループ付与）**
+### test_generator.py — 生成（`engine/backtracker.py` + `engine/generator.py`）
+
+| 関数 | 確認できること |
+|------|------|
+| `test_all_free_cells_connected` | 予約以外の全セルが連結 |
+| `test_reserved_cells_stay_fully_walled` | 予約セル（42）は 0xF のまま |
+| `test_perfect_maze_is_spanning_tree` | 辺数=セル数-1 の全域木（完全迷路） |
+| `test_seed_reproducibility` | 同 seed で同一結果 |
+| `test_different_seeds_differ` | 別 seed で別結果 |
+| `test_no_reserved_connects_all` | 予約なしでも全連結 |
+| `test_registry_has_backtracker` | アルゴリズム登録に backtracker がある |
+| `test_unknown_algorithm_raises` | 未知アルゴリズム名で例外 |
+| `test_wall_consistency_after_generation` | 生成後も隣接壁が整合 |
+
+### test_braiding.py — 不完全迷路化・ループ付与（`engine/braiding.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -208,11 +204,7 @@ make test
 | `test_playable_is_reproducible` | 同 seed で再現 |
 | `test_braid_min_loops_guarantee` | braid の `min_loops` が保証される |
 
-### test_output.py — 出力ファイル（仕様 IV.5）と ASCII 表示（`engine/output.py`）
-
-旧 `test_writer.py` / `test_display.py` を統合したテストファイル。
-
-**出力ファイル**
+### test_writer.py — 出力ファイル（仕様 IV.5、`engine/writer.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -223,7 +215,7 @@ make test
 | `test_write_maze_uses_lf_newlines` | 改行が常に LF |
 | `test_write_then_read_roundtrip` | 書き出し→読み戻しで一致 |
 
-**ASCII 表示と操作**
+### test_display.py — ASCII 表示と操作（`engine/ascii_display.py` + `engine/display.py`）
 
 | 関数 | 確認できること |
 |------|------|

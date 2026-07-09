@@ -2,9 +2,14 @@
 
 Each stage lives in its own module and can be imported on its own (see that
 module's docstring for a copy-pasteable example): :mod:`engine.maze` (core data
-structure), :mod:`engine.build` (sign reservation, generation, braiding),
-:mod:`engine.validator` (spec IV.4 condition checks), and :mod:`engine.output`
-(file writing and terminal display).
+structure), :mod:`engine.initializer` ("42" sign reservation + initial map),
+:mod:`engine.backtracker` (the recursive-backtracker algorithm),
+:mod:`engine.generator` (algorithm selection registry),
+:mod:`engine.braiding` (imperfect-maze / playable-board conversion),
+:mod:`engine.metrics` (loop / dead-end counting),
+:mod:`engine.validator` (spec IV.4 condition checks), :mod:`engine.writer`
+(output-file writing), :mod:`engine.ascii_display` (ASCII rendering), and
+:mod:`engine.display` (display-mode selection registry).
 
 Basic usage (the full pipeline, PERFECT=False)::
 
@@ -40,16 +45,16 @@ from typing import Any, Dict
 # submodule with its own CLI (e.g. ``engine.validator``) is run directly with
 # ``python -m engine.validator``.
 _SUBMODULE_OF: Dict[str, str] = {
-    "GLYPHS": "engine.build",
-    "algorithm_names": "engine.build",
-    "braid": "engine.build",
-    "count_dead_ends": "engine.build",
-    "count_loops": "engine.build",
-    "generate_backtracker": "engine.build",
-    "get_algorithm": "engine.build",
-    "initialize_maze": "engine.build",
-    "reserved_cells": "engine.build",
-    "sign_bitmap": "engine.build",
+    "GLYPHS": "engine.initializer",
+    "initialize_maze": "engine.initializer",
+    "reserved_cells": "engine.initializer",
+    "sign_bitmap": "engine.initializer",
+    "generate_backtracker": "engine.backtracker",
+    "algorithm_names": "engine.generator",
+    "get_algorithm": "engine.generator",
+    "braid": "engine.braiding",
+    "count_dead_ends": "engine.metrics",
+    "count_loops": "engine.metrics",
     "ConfigError": "engine.errors",
     "ConfigKeyError": "engine.errors",
     "ConfigParseError": "engine.errors",
@@ -64,12 +69,12 @@ _SUBMODULE_OF: Dict[str, str] = {
     "path_to_cells": "engine.maze",
     "solution_cells": "engine.maze",
     "solve": "engine.maze",
-    "WALL_COLORS": "engine.output",
-    "display_names": "engine.output",
-    "format_maze": "engine.output",
-    "get_display_mode": "engine.output",
-    "render_ascii": "engine.output",
-    "write_maze": "engine.output",
+    "format_maze": "engine.writer",
+    "write_maze": "engine.writer",
+    "WALL_COLORS": "engine.ascii_display",
+    "render_ascii": "engine.ascii_display",
+    "display_names": "engine.display",
+    "get_display_mode": "engine.display",
     "validate": "engine.validator",
 }
 

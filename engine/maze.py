@@ -156,6 +156,15 @@ class Maze:
                     return False
         return True
 
+    def count_openings(self, x: int, y: int) -> int:
+        """Return the number of open walls (passages) of cell ``(x, y)``.
+
+        A single shared implementation for a query both :mod:`engine.braiding`
+        and :mod:`engine.validator` need (a cell with exactly one opening is a
+        dead end), so neither module has to keep its own private copy.
+        """
+        return sum(1 for d in DIRECTIONS if self.is_open(x, y, d))
+
 
 def bfs_distances(maze: Maze, source: Coord) -> Dict[Coord, int]:
     """Compute the shortest distance (in steps) from ``source`` to each cell.

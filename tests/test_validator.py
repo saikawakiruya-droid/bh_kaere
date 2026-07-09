@@ -7,10 +7,11 @@ import random
 from pathlib import Path
 from typing import Set, Tuple
 
-from engine.build import generate_backtracker, reserved_cells
+from engine.backtracker import generate_backtracker
+from engine.initializer import reserved_cells
 from engine.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze, solve
-from engine.output import write_maze
 from engine.validator import _parse_output_file, main, validate
+from engine.writer import write_maze
 
 Coord = Tuple[int, int]
 

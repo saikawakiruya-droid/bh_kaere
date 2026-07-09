@@ -1,26 +1,12 @@
 # [TEST FILE] 提出・採点対象外（仕様 III.3）— 動作確認専用。実行: make test / pytest
-"""Unit tests for engine.output (file writing and terminal display)."""
+"""Unit tests for the writer module (output-file format)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from engine.errors import ConfigValueError
 from engine.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze
-from engine.output import (
-    display_names,
-    format_maze,
-    get_display_mode,
-    render_ascii,
-    write_maze,
-)
-
-
-# ===========================================================================
-# File output (formerly test_writer.py)
-# ===========================================================================
+from engine.writer import format_maze, write_maze
 
 
 def test_hex_encoding_matches_wall_bits() -> None:
@@ -76,53 +62,3 @@ def test_write_then_read_roundtrip(tmp_path: Path) -> None:
     write_maze(str(out), maze, (0, 0), (3, 2), "EEESS")
     content = out.read_text(encoding="utf-8")
     assert content == format_maze(maze, (0, 0), (3, 2), "EEESS")
-
-
-# ===========================================================================
-# Terminal display (formerly test_display.py)
-# ===========================================================================
-
-
-def test_render_dimensions() -> None:
-    maze = Maze(3, 2)  # all closed
-    text = render_ascii(maze)
-    lines = text.splitlines()
-    # For height h, the number of lines = 2h + 1.
-    assert len(lines) == 2 * 2 + 1
-    # For width w, each line's length = 4w + 1.
-    assert all(len(line) == 4 * 3 + 1 for line in lines)
-
-
-def test_render_marks_entry_exit_and_sign() -> None:
-    maze = Maze(3, 3)
-    text = render_ascii(
-        maze, entry=(0, 0), exit_=(2, 2), reserved={(1, 1)})
-    assert " E " in text
-    assert " X " in text
-    assert "###" in text
-
-
-def test_show_path_toggle() -> None:
-    maze = Maze(3, 3)
-    with_path = render_ascii(maze, path={(1, 1)}, show_path=True)
-    without_path = render_ascii(maze, path={(1, 1)}, show_path=False)
-    assert " * " in with_path
-    assert " * " not in without_path
-
-
-def test_wall_color_adds_ansi() -> None:
-    maze = Maze(3, 2)
-    plain = render_ascii(maze)
-    colored = render_ascii(maze, wall_color="\033[31m")
-    assert "\033[31m" not in plain     # default is uncolored
-    assert "\033[31m" in colored       # colored output contains the ANSI code
-
-
-def test_registry_has_ascii() -> None:
-    assert "ascii" in display_names()
-    assert get_display_mode("ascii") is render_ascii
-
-
-def test_unknown_display_raises() -> None:
-    with pytest.raises(ConfigValueError):
-        get_display_mode("opengl")

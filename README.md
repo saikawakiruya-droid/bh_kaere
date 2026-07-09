@@ -49,9 +49,15 @@ imported on its own (see "Reusable code and usage" below):
 | Module | Role |
 |------|------|
 | `engine/maze.py` | Core (wall representation, open/close, BFS distances, shortest path) |
-| `engine/build.py` | Sign reservation + initial map, generation algorithm, braiding (`PERFECT=False`) |
-| `engine/output.py` | Output-file writing (hex format) + ASCII rendering |
+| `engine/initializer.py` | Sign reservation + initial map (the "42") |
+| `engine/backtracker.py` | Recursive-backtracker generation algorithm |
+| `engine/generator.py` | Algorithm selection registry (`ALGORITHM` config key) |
+| `engine/braiding.py` | Imperfect-maze / playable-board conversion (`PERFECT=False`) |
+| `engine/metrics.py` | Loop / dead-end counting (used by braiding and the validator) |
 | `engine/validator.py` | Post-generation condition checks (library + CLI) |
+| `engine/writer.py` | Output-file writing (hex format) |
+| `engine/ascii_display.py` | ASCII rendering |
+| `engine/display.py` | Display-mode selection registry (`DISPLAY` config key) |
 | `engine/errors.py` | Exception hierarchy |
 
 **For testing (not submitted / graded. Spec III.3):**
@@ -167,9 +173,9 @@ python3 a_maze_ing.py imperfect.txt
 - [ ] No `warning:` lines are printed: the built-in playable-board validation
       passed (open four corners and centre, at least two independent loops, and
       only rare dead ends — spec IV.4, v2.2).
-- [ ] The maze contains loops (`engine/build.py`'s braiding section); toggling
-      the path display shows alternative corridors, and
-      `python3 -m engine.validator maze.txt` reports `OK`.
+- [ ] The maze contains loops (`engine/braiding.py`); toggling the path display
+      shows alternative corridors, and `python3 -m engine.validator maze.txt`
+      reports `OK`.
 - [ ] Full connectivity: no isolated cells besides the "42" pattern.
 
 ### 4. Sign relocation when entry/exit sit in the centre
@@ -293,20 +299,20 @@ path between any two points).
 
 The algorithm can be selected with the `ALGORITHM` key (currently only
 `backtracker`); the design lets you register e.g. Prim's or Kruskal's algorithm
-in `ALGORITHMS` of `engine/build.py` and select it directly.
+as a sibling of `engine/backtracker.py` and add it to `ALGORITHMS` in
+`engine/generator.py` to select it directly.
 
 ### Playable board when `PERFECT=False` (spec IV.4, v2.2)
 
 The `PERFECT=False` mode must be a board usable by a Pac-Man-like game, not
-just a maze with a few loops. After the backtracker builds a spanning tree, the
-braiding section of `engine/build.py` reshapes it in three phases:
+just a maze with a few loops. After the backtracker builds a spanning tree,
+`engine/braiding.py` reshapes it in three phases:
 
 1. **Dead-end reduction** — each dead end opens one wall to connect elsewhere,
    so a chased player is rarely trapped.
 2. **Corridor enforcement** — the four corners and the centre (kept free of the
-   "42" sign by the sign-reservation section of `engine/build.py`) are given at
-   least two openings, so the ghosts' corners and the player's central start
-   are real corridors.
+   "42" sign by `engine/initializer.py`) are given at least two openings, so
+   the ghosts' corners and the player's central start are real corridors.
 3. **Loop guarantee** — extra walls are opened until there are **at least two
    independent loops** (a perfect maze, or one with a single removed wall, is
    rejected).
@@ -367,7 +373,8 @@ from engine.maze import Maze, solve, solution_cells
 
 # Just generation (sign reservation + recursive backtracker)
 import random
-from engine.build import reserved_cells, generate_backtracker
+from engine.initializer import reserved_cells
+from engine.backtracker import generate_backtracker
 
 reserved = reserved_cells(25, 20)
 maze = generate_backtracker(25, 20, reserved, random.Random(42), start=(0, 0))
@@ -379,7 +386,8 @@ from engine.validator import validate
 problems = validate(maze, (0, 0), (24, 19))
 
 # Just file output / terminal display
-from engine.output import write_maze, render_ascii
+from engine.writer import write_maze
+from engine.ascii_display import render_ascii
 ```
 
 Or import everything at once from the package root:
@@ -390,10 +398,16 @@ from engine import Maze, generate_backtracker, braid, validate, write_maze, rend
 
 Modules:
 
-- `engine/maze.py` — wall representation (`Maze`), `open_wall`, `bfs_distances`, `solve`, `solution_cells`
-- `engine/build.py` — "42" sign reservation + initial map, generation algorithm and registry, braiding
+- `engine/maze.py` — core `Maze` class (`open_wall`, `bfs_distances`, `solve`, `solution_cells`)
+- `engine/initializer.py` — "42" sign reservation + initial map
+- `engine/backtracker.py` — the recursive-backtracker generation algorithm
+- `engine/generator.py` — algorithm selection registry (`get_algorithm`, `algorithm_names`)
+- `engine/braiding.py` — imperfect-maze / playable-board conversion
+- `engine/metrics.py` — loop / dead-end counting, shared by braiding and the validator
 - `engine/validator.py` — condition checks (library + CLI)
-- `engine/output.py` — output-file writing (hex format) + ASCII rendering and display registry
+- `engine/writer.py` — output-file writing (hex format)
+- `engine/ascii_display.py` — ASCII rendering
+- `engine/display.py` — display-mode selection registry (`get_display_mode`, `display_names`)
 - `engine/errors.py` — exception hierarchy shared by the above
 
 The generator is also shipped as a self-contained, single-file `pip` package
@@ -417,11 +431,11 @@ path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
 
 - **Members and roles:**
   - **naarai** — core & generation: `engine/maze.py` (wall model, BFS/solve),
-    the generation and braiding sections of `engine/build.py` (non-perfect
-    board), and the `mazegen` reusable package.
+    `engine/backtracker.py` / `engine/braiding.py` (non-perfect board), and the
+    `mazegen` reusable package.
   - **ksadayas** — I/O & verification: `config.py` / `engine/errors.py`
-    (config parsing), `engine/output.py`, `engine/validator.py` (ASCII +
-    interaction), tests, and docs.
+    (config parsing), `engine/writer.py` / `engine/ascii_display.py`,
+    `engine/validator.py` (ASCII + interaction), tests, and docs.
   - _(Adjust the split above to match how the work was actually shared.)_
 - **Plan and evolution:** Built incrementally in the order
   "solving → initialization (42) → generation → output → display → validation",
@@ -431,8 +445,8 @@ path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
   and validation. Layering exceptions into fatal/non-fatal made errors easy to
   distinguish. The `PERFECT=False` mode meets the spec v2.2 playable-board
   rules (open four corners and centre, at least two independent loops, rare
-  dead ends), enforced by the braiding section of `engine/build.py` and
-  confirmed by `engine/validator.py`.
+  dead ends), enforced by `engine/braiding.py` and confirmed by
+  `engine/validator.py`.
 - **What could improve:** Dead ends are kept rare but not driven to zero, so
   the "no dead end at all" bonus is not yet reached. The subject's
   `maze_analyzer.py` is not bundled, so cross-checking with it is manual. Only
