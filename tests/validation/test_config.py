@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from config import parse_config
-from engine.errors import (
+from core.errors import (
     ConfigError,
     ConfigKeyError,
     ConfigParseError,
     ConfigValueError,
 )
+from validation.config import parse_config
 
 VALID = """
 # Sample configuration

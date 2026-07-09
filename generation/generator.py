@@ -1,7 +1,7 @@
 """Selection registry for maze generation algorithms.
 
 Currently the only choice is the **recursive backtracker**
-(:func:`engine.backtracker.generate_backtracker`), but a mechanism to select
+(:func:`generation.backtracker.generate_backtracker`), but a mechanism to select
 one via the ``ALGORITHM`` config key is provided from the start (to add more
 algorithms as a bonus, just register them in ``ALGORITHMS``).
 
@@ -11,7 +11,7 @@ for the "42" sign, and generation never carves them.
 
 Standalone usage::
 
-    from engine.generator import get_algorithm
+    from generation.generator import get_algorithm
 
     generate = get_algorithm("backtracker")
     maze = generate(20, 15, reserved=set(), rng=random.Random(42))
@@ -21,8 +21,8 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from engine.backtracker import GeneratorFn, generate_backtracker
-from engine.errors import ConfigValueError
+from core.errors import ConfigValueError
+from generation.backtracker import GeneratorFn, generate_backtracker
 
 ALGORITHMS: Dict[str, GeneratorFn] = {
     "backtracker": generate_backtracker,

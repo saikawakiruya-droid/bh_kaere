@@ -4,7 +4,7 @@ Format:
 
 - Each cell is a single upper-case hex digit (closed walls encoded as bits:
   bit0=north, bit1=east, bit2=south, bit3=west; 1 means the wall is closed).
-  The :class:`~engine.maze.Maze` wall codes already match this layout, so the
+  The :class:`~core.maze.Maze` wall codes already match this layout, so the
   value is simply turned into hex.
 - One line of cells per row.
 - One blank line, then 3 lines:
@@ -13,8 +13,8 @@ Format:
 
 Standalone usage::
 
-    from engine.maze import Maze
-    from engine.writer import write_maze
+    from core.maze import Maze
+    from output.writer import write_maze
 
     maze = Maze(5, 5)
     write_maze("maze.txt", maze, entry=(0, 0), exit_=(4, 4), solution="EESS")
@@ -24,8 +24,8 @@ from __future__ import annotations
 
 from typing import Optional, Tuple
 
-from engine.errors import MazeError
-from engine.maze import Maze
+from core.errors import MazeError
+from core.maze import Maze
 
 Coord = Tuple[int, int]
 

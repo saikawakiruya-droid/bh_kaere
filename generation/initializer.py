@@ -2,7 +2,7 @@
 
 It has two roles:
 
-1. Prepare an initial :class:`~engine.maze.Maze` with every cell closed on all
+1. Prepare an initial :class:`~core.maze.Maze` with every cell closed on all
    four sides.
 2. Reserve the spec IV.4 "42" sign as **cells kept closed**. The generation
    algorithm never carves these reserved cells, so the "42" block emerges
@@ -14,7 +14,7 @@ cause (all non-fatal: the maze can still be built by omitting the sign).
 
 Standalone usage::
 
-    from engine.initializer import initialize_maze
+    from generation.initializer import initialize_maze
 
     maze, reserved = initialize_maze(20, 15, entry=(0, 0), exit_=(19, 14))
 """
@@ -23,8 +23,8 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
-from engine.errors import SignOverlapError, SignTooBigError
-from engine.maze import Maze
+from core.errors import SignOverlapError, SignTooBigError
+from core.maze import Maze
 
 Coord = Tuple[int, int]
 

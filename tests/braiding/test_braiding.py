@@ -6,11 +6,11 @@ from __future__ import annotations
 import random
 from typing import Set, Tuple
 
-from engine.backtracker import generate_backtracker
-from engine.braiding import braid
-from engine.initializer import reserved_cells
-from engine.maze import Maze, bfs_distances
-from engine.validator import validate
+from generation.backtracker import generate_backtracker
+from braiding.braiding import braid
+from generation.initializer import reserved_cells
+from core.maze import Maze, bfs_distances
+from verification.verifier import validate
 
 Coord = Tuple[int, int]
 

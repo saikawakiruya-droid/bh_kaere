@@ -1,13 +1,13 @@
 """Recursive-backtracker maze generation (iterative implementation).
 
-Registered under the name ``"backtracker"`` in :mod:`engine.generator`'s
+Registered under the name ``"backtracker"`` in :mod:`generation.generator`'s
 ``ALGORITHMS`` registry; kept in its own file so a bonus algorithm (Prim's,
 Kruskal's, ...) can be added as a sibling file without touching this one.
 
 Standalone usage::
 
     import random
-    from engine.backtracker import generate_backtracker
+    from generation.backtracker import generate_backtracker
 
     maze = generate_backtracker(20, 15, reserved=set(), rng=random.Random(42))
 """
@@ -17,7 +17,7 @@ from __future__ import annotations
 import random
 from typing import Callable, List, Optional, Set, Tuple
 
-from engine.maze import DIRECTIONS, Maze
+from core.maze import DIRECTIONS, Maze
 
 Coord = Tuple[int, int]
 
@@ -82,7 +82,7 @@ def generate_backtracker(width: int, height: int, reserved: Set[Coord],
             reserved cell or ``None``, start from the top-left free cell.
 
     Returns:
-        The generated :class:`~engine.maze.Maze`.
+        The generated :class:`~core.maze.Maze`.
     """
     maze = Maze(width, height)
     reserved = set(reserved)

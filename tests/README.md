@@ -18,6 +18,10 @@ make test
 # 個別ファイル / 個別関数だけ実行
 .venv/bin/python -m pytest tests/test_playable.py -q
 .venv/bin/python -m pytest tests/test_playable.py::test_at_least_two_independent_loops -q
+
+# ディレクトリ単位（本体側の core/validation/generation/braiding/verification/output に
+# ミラーした構成）で実行することもできる
+.venv/bin/python -m pytest tests/generation/ -q
 ```
 
 > `make install` は隔離した仮想環境 `./.venv` を作成し（`uv` があれば優先、
@@ -65,7 +69,7 @@ make test
    `warning:` が出ず、`wrote output file: maze.txt` が出ること。ASCII 表示に
    「42」・入口・出口・最短経路が見えること。
 
-6. **出力ファイル検証**： `python3 -m engine.validator maze.txt` が `OK` を出す。
+6. **出力ファイル検証**： `python3 -m verification.cli maze.txt` が `OK` を出す。
 
 7. **実行確認（PERFECT=False / Pac-Man 盤面）**：`PERFECT=False` の config で
    実行し、`warning:` が出ないこと（四隅・中央の通路化、ループ2本以上、
@@ -82,12 +86,14 @@ make test
    - `LICENSE.md` がリポジトリ直下にある。
 
 10. **提出フォルダに入れる / 入れないの仕分け**
-    - **入れる**：直下の `*.py`（`a_maze_ing.py`、`config.py` ほか）、
-      `engine/`（`__init__.py` / `maze.py` / `initializer.py` /
-      `backtracker.py` / `generator.py` / `braiding.py` / `metrics.py` /
-      `validator.py` / `writer.py` / `ascii_display.py` / `display.py` /
-      `errors.py`）、`config.txt`、`Makefile`、`pyproject.toml`、`setup.cfg`、
-      `README.md`、`LICENSE.md`、`mazegen-1.0.0-*.whl` / `.tar.gz`、
+    - **入れる**：直下の `*.py`（`a_maze_ing.py` ほか）、`core/`
+      （`maze.py` / `metrics.py` / `errors.py`）、`validation/`
+      （`config.py` / `options.py`）、`generation/`（`initializer.py` /
+      `backtracker.py` / `generator.py`）、`braiding/`（`braiding.py`）、
+      `verification/`（`verifier.py` / `cli.py`）、`output/`（`writer.py` /
+      `ascii_display.py` / `display.py`）、各ディレクトリの `__init__.py`、
+      `config.txt`、`Makefile`、`pyproject.toml`、`setup.cfg`、`README.md`、
+      `LICENSE.md`、`mazegen-1.0.0-*.whl` / `.tar.gz`、
       パッケージ再ビルドに必要な一式。
     - **入れない**：`tests/`（このディレクトリ）、`examples/`、
       `a_maze_ing.pdf`、`ISSUES.md`、`TASKS.md`、`a_maze_ing.md`、`.venv/`、
@@ -103,7 +109,7 @@ make test
 すべて pytest 関数。`make test` で一括実行されるが、該当機能をいじったときは
 その関数だけを個別実行して確認するとよい。
 
-### test_maze.py — コア（壁表現・BFS・最短経路）
+### tests/core/test_maze.py — コア（壁表現・BFS・最短経路、`core/maze.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -118,7 +124,7 @@ make test
 | `test_solution_cells_*` | 最短経路上セル集合が正しい／到達不能で空 |
 | `test_solved_path_is_walkable` | 返した経路が実際に壁を通らず歩ける |
 
-### test_initializer.py — 初期化と「42」配置（`engine/initializer.py`）
+### tests/generation/test_initializer.py — 初期化と「42」配置（`generation/initializer.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -134,7 +140,7 @@ make test
 | `test_too_small_and_overlap_are_distinct` | 2 種のエラーが区別される |
 | `test_initialize_maze_*` | 全閉+予約の初期化、省略/再配置時の挙動 |
 
-### test_generator.py — 生成（`engine/backtracker.py` + `engine/generator.py`）
+### tests/generation/test_generator.py — 生成（`generation/backtracker.py` + `generation/generator.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -148,7 +154,7 @@ make test
 | `test_unknown_algorithm_raises` | 未知アルゴリズム名で例外 |
 | `test_wall_consistency_after_generation` | 生成後も隣接壁が整合 |
 
-### test_braiding.py — 不完全迷路化・ループ付与（`engine/braiding.py`）
+### tests/braiding/test_braiding.py — 不完全迷路化・ループ付与（`braiding/braiding.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -160,7 +166,7 @@ make test
 | `test_braiding_reproducible` | 同 seed で再現 |
 | `test_braided_maze_not_perfect` | braid 後は完全迷路でなくなる（連結は維持） |
 
-### test_config.py / test_options 相当 — 設定ファイル検証
+### tests/validation/test_config.py — 設定ファイルの入力チェック（`validation/config.py` + `validation/options.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -178,7 +184,7 @@ make test
 | `test_duplicate_key_warns_and_last_wins` | 重複キーは警告し後勝ち |
 | `test_errors_are_distinct` | 原因別に例外型が分かれている |
 
-### test_validator.py — 検証（仕様 IV.4）
+### tests/verification/test_verifier.py — 生成後の迷路構造チェック（仕様 IV.4、`verification/verifier.py` + `verification/cli.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -191,7 +197,7 @@ make test
 | `test_detects_non_perfect_when_cycle` | ループありを「完全でない」と検出 |
 | `test_cli_roundtrip_ok` | 出力ファイルを CLI で検証して OK |
 
-### test_playable.py — Pac-Man 盤面（仕様 IV.4 v2.2 / PERFECT=False）
+### tests/test_playable.py — Pac-Man 盤面（仕様 IV.4 v2.2 / PERFECT=False、横断的な統合テスト）
 
 | 関数 | 確認できること |
 |------|------|
@@ -204,7 +210,7 @@ make test
 | `test_playable_is_reproducible` | 同 seed で再現 |
 | `test_braid_min_loops_guarantee` | braid の `min_loops` が保証される |
 
-### test_writer.py — 出力ファイル（仕様 IV.5、`engine/writer.py`）
+### tests/output/test_writer.py — 出力ファイル（仕様 IV.5、`output/writer.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -215,7 +221,7 @@ make test
 | `test_write_maze_uses_lf_newlines` | 改行が常に LF |
 | `test_write_then_read_roundtrip` | 書き出し→読み戻しで一致 |
 
-### test_display.py — ASCII 表示と操作（`engine/ascii_display.py` + `engine/display.py`）
+### tests/output/test_display.py — ASCII 表示と操作（`output/ascii_display.py` + `output/display.py`）
 
 | 関数 | 確認できること |
 |------|------|
@@ -226,7 +232,7 @@ make test
 | `test_registry_has_ascii` | 表示モード登録に ascii がある |
 | `test_unknown_display_raises` | 未知の表示モードで例外 |
 
-### test_main.py — エンドツーエンド / CLI
+### tests/test_main.py — エンドツーエンド / CLI（横断的な統合テスト）
 
 | 関数 | 確認できること |
 |------|------|
@@ -236,7 +242,7 @@ make test
 | `test_no_args_usage` | 引数無しで usage を表示 |
 | `test_interact_*` | 対話（seed 入力・EOF・終了）の挙動 |
 
-### test_mazegen.py — 再利用モジュール（`mazegen.MazeGenerator`）
+### tests/test_mazegen.py — 再利用モジュール（`mazegen.MazeGenerator`）
 
 | 関数 | 確認できること |
 |------|------|

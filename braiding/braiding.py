@@ -13,13 +13,13 @@ board directly usable by a Pac-Man-like game (spec IV.4, v2.2):
 Every wall removal is checked so it never creates a **fully open 3x3 area**;
 passages therefore stay at most 2 cells wide. Reserved cells (the "42" sign)
 are never opened or connected to. Independent-loop counting lives in
-:mod:`engine.metrics` (``count_loops``), used here to satisfy the loop
+:mod:`core.metrics` (``count_loops``), used here to satisfy the loop
 guarantee.
 
 Standalone usage::
 
     import random
-    from engine.braiding import braid
+    from braiding.braiding import braid
 
     rng = random.Random(1)
     braid(maze, reserved=set(), rng=rng, min_loops=2)  # modifies maze in place
@@ -30,8 +30,8 @@ from __future__ import annotations
 import random
 from typing import Iterable, List, Optional, Set, Tuple
 
-from engine.maze import DIRECTIONS, Maze
-from engine.metrics import count_loops
+from core.maze import DIRECTIONS, Maze
+from core.metrics import count_loops
 
 Coord = Tuple[int, int]
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from engine.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze
-from engine.writer import format_maze, write_maze
+from core.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze
+from output.writer import format_maze, write_maze
 
 
 def test_hex_encoding_matches_wall_bits() -> None:

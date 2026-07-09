@@ -1,12 +1,14 @@
-"""Dedicated module that checks whether a maze satisfies the spec IV.4 rules.
+"""Library-side maze verification: checks whether a maze satisfies spec IV.4.
 
-There are two ways to use it:
+Call :func:`validate` right after generation to get the list of problems
+(empty means valid). The main pipeline uses this to confirm post-generation
+that "a compliant maze was produced". This is distinct from *validation*
+(:mod:`validation.config` / :mod:`validation.options`), which checks the
+config-file *input* before a maze is even built — this module *verifies* the
+already-built maze's structure instead.
 
-1. **As a library** — call :func:`validate` right after generation to get the
-   list of problems (empty means valid). The main pipeline uses this to confirm
-   post-generation that "a compliant maze was produced".
-2. **As a command** — ``python -m engine.validator <output_file>`` reads an
-   output file (spec IV.5 format) and validates its structure.
+For the standalone CLI (``python -m verification.cli <output_file>``, which
+reads an output file and calls :func:`validate` on it), see :mod:`verification.cli`.
 
 Conditions checked:
 
@@ -21,8 +23,8 @@ Conditions checked:
 
 Standalone usage::
 
-    from engine.maze import Maze
-    from engine.validator import validate
+    from core.maze import Maze
+    from verification.verifier import validate
 
     maze = Maze(5, 5)
     problems = validate(maze, entry=(0, 0), exit_=(4, 4))
@@ -32,10 +34,9 @@ Standalone usage::
 
 from __future__ import annotations
 
-import sys
 from typing import List, Optional, Set, Tuple
 
-from engine.maze import (
+from core.maze import (
     DIRECTIONS,
     OPPOSITE,
     WALL_E,
@@ -45,7 +46,7 @@ from engine.maze import (
     Maze,
     bfs_distances,
 )
-from engine.metrics import count_loops
+from core.metrics import count_loops
 
 Coord = Tuple[int, int]
 
@@ -289,64 +290,3 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
     if solution is not None:
         problems += _check_solution(maze, entry, exit_, solution)
     return problems
-
-
-def _parse_output_file(path: str) -> Tuple[Maze, Coord, Coord, str]:
-    """Read an output file (spec IV.5 format) and reconstruct the maze/endpoints/path."""
-    with open(path, encoding="utf-8") as fh:
-        lines = fh.read().split("\n")
-    # Drop one trailing blank line (from the final \n).
-    if lines and lines[-1] == "":
-        lines.pop()
-    # Everything up to the first blank line is the hex grid.
-    grid_lines: List[str] = []
-    idx = 0
-    while idx < len(lines) and lines[idx] != "":
-        grid_lines.append(lines[idx])
-        idx += 1
-    if idx + 3 > len(lines):
-        raise ValueError("malformed output file (missing meta lines)")
-    entry_s, exit_s, path = lines[idx + 1], lines[idx + 2], lines[idx + 3]
-
-    height = len(grid_lines)
-    width = len(grid_lines[0]) if grid_lines else 0
-    cells: List[List[int]] = []
-    for row in grid_lines:
-        if len(row) != width:
-            raise ValueError("hex grid rows have inconsistent width")
-        cells.append([int(ch, 16) for ch in row])
-    maze = Maze(width, height, cells)
-
-    def coord(s: str) -> Coord:
-        a, b = s.split(",")
-        return (int(a), int(b))
-
-    return maze, coord(entry_s), coord(exit_s), path
-
-
-def main(argv: Optional[List[str]] = None) -> int:
-    """CLI entry point. Validate an output file and print the result."""
-    args = argv if argv is not None else sys.argv[1:]
-    if len(args) != 1:
-        print("usage: python -m engine.validator <output_file>")
-        return 2
-    try:
-        maze, entry, exit_, path = _parse_output_file(args[0])
-    except (OSError, ValueError) as err:
-        print(f"read error: {err}")
-        return 2
-
-    # An output file does not record reserved cells / perfect, so validate
-    # structure only.
-    problems = validate(maze, entry, exit_, solution=path)
-    if problems:
-        print(f"FAIL: {len(problems)} problem(s)")
-        for p in problems:
-            print(f"  - {p}")
-        return 1
-    print("OK: the maze satisfies the structural conditions")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

@@ -18,7 +18,7 @@ can be copied into another project on its own.
 
 Standalone usage::
 
-    from engine.maze import Maze, solve, solution_cells
+    from core.maze import Maze, solve, solution_cells
 
     maze = Maze(5, 5)              # every cell closed on all 4 sides
     maze.open_wall(0, 0, "E")      # carve a passage by hand
@@ -159,9 +159,9 @@ class Maze:
     def count_openings(self, x: int, y: int) -> int:
         """Return the number of open walls (passages) of cell ``(x, y)``.
 
-        A single shared implementation for a query both :mod:`engine.braiding`
-        and :mod:`engine.validator` need (a cell with exactly one opening is a
-        dead end), so neither module has to keep its own private copy.
+        A single shared implementation for a query both :mod:`braiding.braiding`
+        and :mod:`verification.verifier` need (a cell with exactly one opening
+        is a dead end), so neither module has to keep its own private copy.
         """
         return sum(1 for d in DIRECTIONS if self.is_open(x, y, d))
 

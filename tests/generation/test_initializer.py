@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import pytest
 
-from engine.errors import SignOverlapError, SignTooBigError
-from engine.initializer import (
+from core.errors import SignOverlapError, SignTooBigError
+from generation.initializer import (
     GLYPH_HEIGHT,
     initialize_maze,
     reserved_cells,

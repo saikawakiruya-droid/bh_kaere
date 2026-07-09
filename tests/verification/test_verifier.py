@@ -1,5 +1,5 @@
 # [TEST FILE] 提出・採点対象外（仕様 III.3）— 動作確認専用。実行: make test / pytest
-"""Unit tests for the validator module (maze condition checks)."""
+"""Unit tests for the verifier module (maze condition checks)."""
 
 from __future__ import annotations
 
@@ -7,11 +7,12 @@ import random
 from pathlib import Path
 from typing import Set, Tuple
 
-from engine.backtracker import generate_backtracker
-from engine.initializer import reserved_cells
-from engine.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze, solve
-from engine.validator import _parse_output_file, main, validate
-from engine.writer import write_maze
+from core.maze import WALL_E, WALL_N, WALL_S, WALL_W, Maze, solve
+from generation.backtracker import generate_backtracker
+from generation.initializer import reserved_cells
+from output.writer import write_maze
+from verification.cli import _parse_output_file, main
+from verification.verifier import validate
 
 Coord = Tuple[int, int]
 

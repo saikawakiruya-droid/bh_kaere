@@ -9,13 +9,14 @@ from typing import Set, Tuple
 import pytest
 
 from a_maze_ing import PLAYABLE_MIN_LOOPS, _corridor_cells, build_maze
-from config import Config, Options
-from engine.backtracker import generate_backtracker
-from engine.braiding import braid
-from engine.initializer import reserved_cells
-from engine.maze import Maze
-from engine.metrics import count_dead_ends, count_loops
-from engine.validator import validate
+from braiding.braiding import braid
+from core.maze import Maze
+from core.metrics import count_dead_ends, count_loops
+from generation.backtracker import generate_backtracker
+from generation.initializer import reserved_cells
+from validation.config import Config
+from validation.options import Options
+from verification.verifier import validate
 
 Coord = Tuple[int, int]
 

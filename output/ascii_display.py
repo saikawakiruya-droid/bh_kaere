@@ -1,13 +1,13 @@
 """ASCII-art rendering of a maze.
 
-Registered under the name ``"ascii"`` in :mod:`engine.display`'s
+Registered under the name ``"ascii"`` in :mod:`output.display`'s
 ``DISPLAY_MODES`` registry; kept in its own file so a bonus display mode
 (e.g. MLX) can be added as a sibling file without touching this one.
 
 Standalone usage::
 
-    from engine.maze import Maze
-    from engine.ascii_display import render_ascii
+    from core.maze import Maze
+    from output.ascii_display import render_ascii
 
     maze = Maze(5, 5)
     print(render_ascii(maze, entry=(0, 0), exit_=(4, 4)))
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Set, Tuple
 
-from engine.maze import WALL_N, WALL_S, WALL_W, Maze
+from core.maze import WALL_N, WALL_S, WALL_W, Maze
 
 Coord = Tuple[int, int]
 

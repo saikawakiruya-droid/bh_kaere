@@ -11,8 +11,9 @@ from typing import Iterator
 import pytest
 
 from a_maze_ing import build_maze, interact, main, run
-from config import parse_config
-from engine.validator import _parse_output_file, validate
+from validation.config import parse_config
+from verification.cli import _parse_output_file
+from verification.verifier import validate
 
 CONFIG = """
 WIDTH=25

@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import pytest
 
-from engine.ascii_display import render_ascii
-from engine.display import display_names, get_display_mode
-from engine.errors import ConfigValueError
-from engine.maze import Maze
+from output.ascii_display import render_ascii
+from output.display import display_names, get_display_mode
+from core.errors import ConfigValueError
+from core.maze import Maze
 
 
 def test_render_dimensions() -> None:

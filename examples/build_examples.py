@@ -34,12 +34,12 @@ from typing import Any, Dict, List, Tuple
 # Add the parent of examples/ (the project root) to the import path.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from a_maze_ing import build_maze          # noqa: E402
-from config import parse_config            # noqa: E402
-from engine.ascii_display import render_ascii  # noqa: E402
-from engine.maze import path_to_cells, solve   # noqa: E402
-from engine.validator import validate      # noqa: E402
-from engine.writer import format_maze      # noqa: E402
+from a_maze_ing import build_maze              # noqa: E402
+from core.maze import path_to_cells, solve     # noqa: E402
+from output.ascii_display import render_ascii  # noqa: E402
+from output.writer import format_maze          # noqa: E402
+from validation.config import parse_config     # noqa: E402
+from verification.verifier import validate     # noqa: E402
 
 Coord = Tuple[int, int]
 HERE = os.path.dirname(os.path.abspath(__file__))

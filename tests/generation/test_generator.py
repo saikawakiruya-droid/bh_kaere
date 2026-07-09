@@ -8,11 +8,11 @@ from typing import Set, Tuple
 
 import pytest
 
-from engine.backtracker import generate_backtracker
-from engine.errors import ConfigValueError
-from engine.generator import algorithm_names, get_algorithm
-from engine.initializer import reserved_cells
-from engine.maze import DIRECTIONS, Maze, bfs_distances
+from generation.backtracker import generate_backtracker
+from core.errors import ConfigValueError
+from generation.generator import algorithm_names, get_algorithm
+from generation.initializer import reserved_cells
+from core.maze import DIRECTIONS, Maze, bfs_distances
 
 Coord = Tuple[int, int]
 
