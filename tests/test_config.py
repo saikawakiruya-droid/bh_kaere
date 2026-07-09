@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from config import parse_config
-from errors import (
+from engine.errors import (
     ConfigError,
     ConfigKeyError,
     ConfigParseError,

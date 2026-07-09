@@ -36,10 +36,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from a_maze_ing import build_maze          # noqa: E402
 from config import parse_config            # noqa: E402
-from display import render_ascii           # noqa: E402
-from maze import path_to_cells, solve      # noqa: E402
-from validator import validate             # noqa: E402
-from writer import format_maze             # noqa: E402
+from engine.maze import path_to_cells, solve   # noqa: E402
+from engine.output import format_maze, render_ascii  # noqa: E402
+from engine.validator import validate      # noqa: E402
 
 Coord = Tuple[int, int]
 HERE = os.path.dirname(os.path.abspath(__file__))

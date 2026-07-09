@@ -6,7 +6,7 @@ Usage::
 
 Reads a config file, generates a (optionally perfect) maze, and writes it to a
 file in the spec IV.5 hex format. After generation it confirms the conditions
-with :mod:`validator`, and finally renders the maze to the terminal.
+with :mod:`engine.validator`, and finally renders the maze to the terminal.
 
 It handles all errors gracefully and never crashes unexpectedly. On any
 problem it prints a clear message and returns an exit code.
@@ -18,15 +18,12 @@ import random
 import sys
 from typing import List, Optional, Set, Tuple
 
-from braiding import braid
 from config import Config, parse_config
-from display import WALL_COLORS, get_display_mode
-from errors import MazeError
-from generator import get_algorithm
-from initializer import initialize_maze
-from maze import Maze, path_to_cells, solve
-from validator import validate
-from writer import write_maze
+from engine.build import braid, get_algorithm, initialize_maze
+from engine.errors import MazeError
+from engine.maze import Maze, path_to_cells, solve
+from engine.output import WALL_COLORS, get_display_mode, write_maze
+from engine.validator import validate
 
 Coord = Tuple[int, int]
 

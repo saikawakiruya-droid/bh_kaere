@@ -12,7 +12,7 @@ import pytest
 
 from a_maze_ing import build_maze, interact, main, run
 from config import parse_config
-from validator import _parse_output_file, validate
+from engine.validator import _parse_output_file, validate
 
 CONFIG = """
 WIDTH=25

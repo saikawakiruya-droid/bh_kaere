@@ -65,7 +65,7 @@ make test
    `warning:` が出ず、`wrote output file: maze.txt` が出ること。ASCII 表示に
    「42」・入口・出口・最短経路が見えること。
 
-6. **出力ファイル検証**： `python3 validator.py maze.txt` が `OK` を出す。
+6. **出力ファイル検証**： `python3 -m engine.validator maze.txt` が `OK` を出す。
 
 7. **実行確認（PERFECT=False / Pac-Man 盤面）**：`PERFECT=False` の config で
    実行し、`warning:` が出ないこと（四隅・中央の通路化、ループ2本以上、
@@ -82,8 +82,10 @@ make test
    - `LICENSE.md` がリポジトリ直下にある。
 
 10. **提出フォルダに入れる / 入れないの仕分け**
-    - **入れる**：直下の `*.py`（`a_maze_ing.py` ほか）、`config.txt`、
-      `Makefile`、`pyproject.toml`、`setup.cfg`、`README.md`、`LICENSE.md`、
+    - **入れる**：直下の `*.py`（`a_maze_ing.py`、`config.py` ほか）、
+      `engine/`（`__init__.py` / `maze.py` / `build.py` / `output.py` /
+      `validator.py` / `errors.py`）、`config.txt`、`Makefile`、
+      `pyproject.toml`、`setup.cfg`、`README.md`、`LICENSE.md`、
       `mazegen-1.0.0-*.whl` / `.tar.gz`、パッケージ再ビルドに必要な一式。
     - **入れない**：`tests/`（このディレクトリ）、`examples/`、
       `a_maze_ing.pdf`、`ISSUES.md`、`TASKS.md`、`a_maze_ing.md`、`.venv/`、
@@ -114,7 +116,13 @@ make test
 | `test_solution_cells_*` | 最短経路上セル集合が正しい／到達不能で空 |
 | `test_solved_path_is_walkable` | 返した経路が実際に壁を通らず歩ける |
 
-### test_generator.py — 生成（recursive backtracker）
+### test_build.py — 初期化・生成・braiding（`engine/build.py`）
+
+`engine/build.py` は「42」サイン予約+初期化 / 生成アルゴリズム / braiding の
+3 セクションを1ファイルにまとめたモジュールで、旧 `test_generator.py` /
+`test_initializer.py` / `test_braiding.py` を統合したテストファイル。
+
+**生成（recursive backtracker）**
 
 | 関数 | 確認できること |
 |------|------|
@@ -128,7 +136,7 @@ make test
 | `test_unknown_algorithm_raises` | 未知アルゴリズム名で例外 |
 | `test_wall_consistency_after_generation` | 生成後も隣接壁が整合 |
 
-### test_initializer.py — 初期化と「42」配置
+**初期化と「42」配置**
 
 | 関数 | 確認できること |
 |------|------|
@@ -143,6 +151,18 @@ make test
 | `test_endpoints_decide_sign_at_same_size` ほか | 端点位置で配置/省略が決まる |
 | `test_too_small_and_overlap_are_distinct` | 2 種のエラーが区別される |
 | `test_initialize_maze_*` | 全閉+予約の初期化、省略/再配置時の挙動 |
+
+**braiding（不完全迷路化・ループ付与）**
+
+| 関数 | 確認できること |
+|------|------|
+| `test_braiding_adds_loops` | 壁を開いてループ（辺）が増える |
+| `test_braiding_reduces_dead_ends` | デッドエンドが減る |
+| `test_braiding_keeps_connectivity_and_no_3x3` | 連結維持・3x3 なし等を満たす |
+| `test_braiding_never_creates_open_3x3` | 3x3 開放を作らない |
+| `test_braiding_keeps_reserved_closed` | 予約セルは閉じたまま |
+| `test_braiding_reproducible` | 同 seed で再現 |
+| `test_braided_maze_not_perfect` | braid 後は完全迷路でなくなる（連結は維持） |
 
 ### test_config.py / test_options 相当 — 設定ファイル検証
 
@@ -162,17 +182,6 @@ make test
 | `test_duplicate_key_warns_and_last_wins` | 重複キーは警告し後勝ち |
 | `test_errors_are_distinct` | 原因別に例外型が分かれている |
 
-### test_writer.py — 出力ファイル（仕様 IV.5）
-
-| 関数 | 確認できること |
-|------|------|
-| `test_hex_encoding_matches_wall_bits` | 壁ビット→16進の対応が正しい |
-| `test_structure_and_trailing_newlines` | グリッド+空行+3行、各行 `\n` 終端 |
-| `test_all_walls_closed_is_F` | 全閉セルが `F` |
-| `test_none_solution_writes_blank_line` | 経路 None は空行 |
-| `test_write_maze_uses_lf_newlines` | 改行が常に LF |
-| `test_write_then_read_roundtrip` | 書き出し→読み戻しで一致 |
-
 ### test_validator.py — 検証（仕様 IV.4）
 
 | 関数 | 確認できること |
@@ -185,18 +194,6 @@ make test
 | `test_detects_bad_solution` | 壁を突き抜ける不正経路を検出 |
 | `test_detects_non_perfect_when_cycle` | ループありを「完全でない」と検出 |
 | `test_cli_roundtrip_ok` | 出力ファイルを CLI で検証して OK |
-
-### test_braiding.py — 不完全迷路化（ループ付与）
-
-| 関数 | 確認できること |
-|------|------|
-| `test_braiding_adds_loops` | 壁を開いてループ（辺）が増える |
-| `test_braiding_reduces_dead_ends` | デッドエンドが減る |
-| `test_braiding_keeps_connectivity_and_no_3x3` | 連結維持・3x3 なし等を満たす |
-| `test_braiding_never_creates_open_3x3` | 3x3 開放を作らない |
-| `test_braiding_keeps_reserved_closed` | 予約セルは閉じたまま |
-| `test_braiding_reproducible` | 同 seed で再現 |
-| `test_braided_maze_not_perfect` | braid 後は完全迷路でなくなる（連結は維持） |
 
 ### test_playable.py — Pac-Man 盤面（仕様 IV.4 v2.2 / PERFECT=False）
 
@@ -211,7 +208,22 @@ make test
 | `test_playable_is_reproducible` | 同 seed で再現 |
 | `test_braid_min_loops_guarantee` | braid の `min_loops` が保証される |
 
-### test_display.py — ASCII 表示と操作
+### test_output.py — 出力ファイル（仕様 IV.5）と ASCII 表示（`engine/output.py`）
+
+旧 `test_writer.py` / `test_display.py` を統合したテストファイル。
+
+**出力ファイル**
+
+| 関数 | 確認できること |
+|------|------|
+| `test_hex_encoding_matches_wall_bits` | 壁ビット→16進の対応が正しい |
+| `test_structure_and_trailing_newlines` | グリッド+空行+3行、各行 `\n` 終端 |
+| `test_all_walls_closed_is_F` | 全閉セルが `F` |
+| `test_none_solution_writes_blank_line` | 経路 None は空行 |
+| `test_write_maze_uses_lf_newlines` | 改行が常に LF |
+| `test_write_then_read_roundtrip` | 書き出し→読み戻しで一致 |
+
+**ASCII 表示と操作**
 
 | 関数 | 確認できること |
 |------|------|

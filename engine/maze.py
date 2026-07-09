@@ -13,7 +13,18 @@ moving south increases ``y``.
 
 This module is the single source of truth for the wall definitions reused by
 both the generator and the renderer, and it also provides the search
-(solving) algorithms.
+(solving) algorithms. It has no dependency on the rest of the package, so it
+can be copied into another project on its own.
+
+Standalone usage::
+
+    from engine.maze import Maze, solve, solution_cells
+
+    maze = Maze(5, 5)              # every cell closed on all 4 sides
+    maze.open_wall(0, 0, "E")      # carve a passage by hand
+    path = solve(maze, (0, 0), (4, 4))         # e.g. "EESS..." or None
+    cells = solution_cells(maze, (0, 0), (4, 4))  # set of cells on some
+                                                    # shortest path
 """
 
 from __future__ import annotations

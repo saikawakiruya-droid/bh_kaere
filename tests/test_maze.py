@@ -7,7 +7,7 @@ from typing import List
 
 import pytest
 
-from maze import (
+from engine.maze import (
     WALL_E,
     WALL_N,
     WALL_S,

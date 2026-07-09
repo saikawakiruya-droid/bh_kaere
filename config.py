@@ -1,37 +1,129 @@
 """Reading and validating the configuration file (``KEY=VALUE``).
 
-This module is responsible for interpreting and validating the **required
-keys**, and delegates the handling of the non-required (optional) keys to
-:mod:`options`. When validation fails, it raises a distinct exception
-depending on the cause:
+CLI-specific glue: this module owns the assignment's config-file format (not
+part of the reusable :mod:`engine` package). It is split into two sections:
 
-- :class:`~errors.ConfigParseError` — syntax error (a non-``KEY=VALUE`` line)
-- :class:`~errors.ConfigKeyError`   — a required key is missing
-- :class:`~errors.ConfigValueError` — an invalid value (type / range / coord)
+1. **Required keys** (``WIDTH``, ``HEIGHT``, ``ENTRY``, ``EXIT``,
+   ``OUTPUT_FILE``, ``PERFECT``) — the maze cannot be built without them.
+2. **Optional keys** (``SEED``, ``ALGORITHM``, ``DISPLAY``, ``SIGN``) — each has
+   a default, applied and validated by :func:`parse_options`.
 
-All of them derive from :class:`~errors.ConfigError`, so the caller can catch
-them together as "a fatal error that prevents building the maze".
+When validation fails, it raises a distinct exception depending on the cause:
+
+- :class:`~engine.errors.ConfigParseError` — syntax error (a non-``KEY=VALUE``
+  line)
+- :class:`~engine.errors.ConfigKeyError`   — a required key is missing
+- :class:`~engine.errors.ConfigValueError` — an invalid value (type / range /
+  coord), for either a required or an optional key
+
+All of them derive from :class:`~engine.errors.ConfigError`, so the caller can
+catch them together as "a fatal error that prevents building the maze".
 """
 
 from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from typing import Dict, Set, Tuple
+from typing import Dict, Optional, Set, Tuple
 
-from errors import (
+from engine.build import GLYPHS, algorithm_names
+from engine.errors import (
     ConfigError,
     ConfigKeyError,
     ConfigParseError,
     ConfigValueError,
 )
-from options import OPTIONAL_KEYS, Options, parse_options
+from engine.output import display_names
 
 Coord = Tuple[int, int]
 
 REQUIRED_KEYS: Set[str] = {
     "WIDTH", "HEIGHT", "ENTRY", "EXIT", "OUTPUT_FILE", "PERFECT",
 }
+
+# ===========================================================================
+# Optional keys (SEED / ALGORITHM / DISPLAY / SIGN), each with a default
+# ===========================================================================
+
+OPTIONAL_KEYS: Set[str] = {"SEED", "ALGORITHM", "DISPLAY", "SIGN"}
+
+DEFAULT_ALGORITHM = "backtracker"
+DEFAULT_DISPLAY = "ascii"
+DEFAULT_SIGN = "42"
+
+
+@dataclass
+class Options:
+    """Validated optional configuration values."""
+
+    seed: Optional[int]
+    algorithm: str
+    display: str
+    sign: str
+
+
+def _parse_seed(value: Optional[str]) -> Optional[int]:
+    """Interpret ``SEED`` as an integer (``None`` if unset)."""
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        raise ConfigValueError(f"SEED must be an integer: '{value}'")
+
+
+def _parse_choice(value: Optional[str], default: str,
+                  allowed: list[str], key: str) -> str:
+    """Validate a choice key (ALGORITHM / DISPLAY)."""
+    if value is None:
+        return default
+    if value not in allowed:
+        raise ConfigValueError(
+            f"unknown {key} '{value}'. choices: {allowed}"
+        )
+    return value
+
+
+def _parse_sign(value: Optional[str]) -> str:
+    """Validate that every character of ``SIGN`` is drawable (in GLYPHS)."""
+    if value is None:
+        return DEFAULT_SIGN
+    unknown = sorted({ch for ch in value if ch not in GLYPHS})
+    if unknown:
+        raise ConfigValueError(
+            f"SIGN contains characters that cannot be drawn: {unknown} "
+            f"(available: {sorted(GLYPHS)})"
+        )
+    return value
+
+
+def parse_options(raw: Dict[str, str]) -> Options:
+    """Extract and validate the optional values from the raw ``KEY=VALUE`` dict.
+
+    Args:
+        raw: The upper-case-key dict read from the config file. Keys other than
+            optional ones are ignored (required keys are handled below).
+
+    Returns:
+        The validated :class:`Options`.
+
+    Raises:
+        ConfigValueError: If any optional key has an invalid value.
+    """
+    return Options(
+        seed=_parse_seed(raw.get("SEED")),
+        algorithm=_parse_choice(
+            raw.get("ALGORITHM"), DEFAULT_ALGORITHM, algorithm_names(),
+            "ALGORITHM"),
+        display=_parse_choice(
+            raw.get("DISPLAY"), DEFAULT_DISPLAY, display_names(), "DISPLAY"),
+        sign=_parse_sign(raw.get("SIGN")),
+    )
+
+
+# ===========================================================================
+# Required keys (WIDTH / HEIGHT / ENTRY / EXIT / OUTPUT_FILE / PERFECT)
+# ===========================================================================
 
 
 @dataclass

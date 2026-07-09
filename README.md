@@ -25,6 +25,8 @@ whether the generated result satisfies the conditions.
   `PERFECT=False` — the playable-board rules).
 - The output file uses the spec's hex format and can be checked with the
   bundled validator or the Moulinette.
+- A deeper code-flow walkthrough (with a diagram) is on Notion:
+  https://app.notion.com/p/3987e1ed867f81a8ab6af4b874cec007
 
 ---
 
@@ -35,19 +37,22 @@ whether the generated result satisfies the conditions.
 | File | Role |
 |------|------|
 | `a_maze_ing.py` | Main program (entry point) |
-| `maze.py` | Core (wall representation, open/close, BFS distances, shortest path) |
-| `initializer.py` | Initial map generation and "42" sign placement |
-| `generator.py` | Generation algorithm and selection registry |
-| `braiding.py` | Imperfect-maze conversion (`PERFECT=False`) |
-| `display.py` | ASCII rendering and display-mode registry |
-| `config.py` / `options.py` | Required-key validation / optional-key handling |
-| `errors.py` | Exception hierarchy |
-| `writer.py` | Output-file writing (hex format) |
-| `validator.py` | Post-generation condition checks (library + CLI) |
+| `config.py` | Config-file parsing: required keys + optional keys (`Options`) |
 | `mazegen.py` | Reusable module (single file) |
 | `mazegen-1.0.0-*.whl` / `.tar.gz` | Pre-built packages |
 | `LICENSE.md` | MIT license permitting reuse of the `mazegen` module (spec VI) |
 | `config.txt` / `Makefile` / `pyproject.toml` / `setup.cfg` / `README.md` | Config, build, docs |
+
+The maze pipeline itself lives under the `engine/` package — each module can be
+imported on its own (see "Reusable code and usage" below):
+
+| Module | Role |
+|------|------|
+| `engine/maze.py` | Core (wall representation, open/close, BFS distances, shortest path) |
+| `engine/build.py` | Sign reservation + initial map, generation algorithm, braiding (`PERFECT=False`) |
+| `engine/output.py` | Output-file writing (hex format) + ASCII rendering |
+| `engine/validator.py` | Post-generation condition checks (library + CLI) |
+| `engine/errors.py` | Exception hierarchy |
 
 **For testing (not submitted / graded. Spec III.3):**
 
@@ -112,7 +117,7 @@ python3 a_maze_ing.py config.txt
 ### Validating the output file
 
 ```bash
-python3 validator.py maze.txt
+python3 -m engine.validator maze.txt
 ```
 
 ---
@@ -138,7 +143,7 @@ python3 a_maze_ing.py config.txt
 - [ ] No `warning:` lines are printed (the built-in post-generation validation
       passed: connectivity, wall consistency, border walls, no 3x3 open area,
       exactly one path for `PERFECT=True`).
-- [ ] `python3 validator.py maze.txt` prints `OK`.
+- [ ] `python3 -m engine.validator maze.txt` prints `OK`.
 
 ### 2. Reproducibility via seed
 
@@ -162,8 +167,9 @@ python3 a_maze_ing.py imperfect.txt
 - [ ] No `warning:` lines are printed: the built-in playable-board validation
       passed (open four corners and centre, at least two independent loops, and
       only rare dead ends — spec IV.4, v2.2).
-- [ ] The maze contains loops (`braiding.py`); toggling the path display shows
-      alternative corridors, and `python3 validator.py maze.txt` reports `OK`.
+- [ ] The maze contains loops (`engine/build.py`'s braiding section); toggling
+      the path display shows alternative corridors, and
+      `python3 -m engine.validator maze.txt` reports `OK`.
 - [ ] Full connectivity: no isolated cells besides the "42" pattern.
 
 ### 4. Sign relocation when entry/exit sit in the centre
@@ -241,7 +247,7 @@ One `KEY=VALUE` per line. Lines starting with `#` and blank lines are ignored.
 | `OUTPUT_FILE` | Output file name | `OUTPUT_FILE=maze.txt` |
 | `PERFECT` | Whether to make a perfect maze (`True`/`False`) | `PERFECT=True` |
 
-### Optional keys (handled by `options.py`)
+### Optional keys (handled by `config.py`)
 
 | Key | Description | Default |
 |------|------|--------|
@@ -287,20 +293,20 @@ path between any two points).
 
 The algorithm can be selected with the `ALGORITHM` key (currently only
 `backtracker`); the design lets you register e.g. Prim's or Kruskal's algorithm
-in `ALGORITHMS` of `generator.py` and select it directly.
+in `ALGORITHMS` of `engine/build.py` and select it directly.
 
 ### Playable board when `PERFECT=False` (spec IV.4, v2.2)
 
 The `PERFECT=False` mode must be a board usable by a Pac-Man-like game, not
-just a maze with a few loops. After the backtracker builds a spanning tree,
-`braiding.py`
-reshapes it in three phases:
+just a maze with a few loops. After the backtracker builds a spanning tree, the
+braiding section of `engine/build.py` reshapes it in three phases:
 
 1. **Dead-end reduction** — each dead end opens one wall to connect elsewhere,
    so a chased player is rarely trapped.
 2. **Corridor enforcement** — the four corners and the centre (kept free of the
-   "42" sign by `initializer.py`) are given at least two openings, so the
-   ghosts' corners and the player's central start are real corridors.
+   "42" sign by the sign-reservation section of `engine/build.py`) are given at
+   least two openings, so the ghosts' corners and the player's central start
+   are real corridors.
 3. **Loop guarantee** — extra walls are opened until there are **at least two
    independent loops** (a perfect maze, or one with a single removed wall, is
    rejected).
@@ -318,7 +324,7 @@ guarantees shortest paths even for imperfect mazes.
 
 ---
 
-## Post-generation validation (`validator.py`)
+## Post-generation validation (`engine/validator.py`)
 
 The dedicated validator confirms that the generated maze satisfies the spec
 IV.4 conditions:
@@ -336,42 +342,59 @@ IV.4 conditions:
 
 The main program runs this validation right after generation and warns on any
 problem. It can be used both as a library (`validate()`, with a `playable`
-flag) and as a CLI (`python3 validator.py <file>`). The CLI validates structure
-only, because an output file does not record the intended mode; the subject's
-`maze_analyzer.py` (not bundled here) can additionally classify a file as
-perfect or playable.
+flag) and as a CLI (`python3 -m engine.validator <file>`). The CLI validates
+structure only, because an output file does not record the intended mode; the
+subject's `maze_analyzer.py` (not bundled here) can additionally classify a
+file as perfect or playable.
 
 ---
 
 ## Reusable code and usage
 
-Maze generation, solving, and wall representation can be reused as modules.
+The whole pipeline (initial map, generation, braiding, validation, output,
+display) lives under the `engine/` package. Each module has no dependency on
+`config.py` or `a_maze_ing.py`, so **any single module can be imported on its
+own** — copy just the one file (plus `engine/maze.py` and `engine/errors.py`,
+its only dependencies) into another project if you only need that one stage.
+Every module's own docstring has a "Standalone usage" example; `engine/`'s
+package docstring shows the full pipeline strung together.
+
+Pick just one stage:
 
 ```python
-import random
-from maze import Maze, solve, solution_cells
-from generator import generate_backtracker
-from initializer import reserved_cells
+# Just the core data structure + BFS solving
+from engine.maze import Maze, solve, solution_cells
 
-# Reserve the "42" cells and generate the maze
+# Just generation (sign reservation + recursive backtracker)
+import random
+from engine.build import reserved_cells, generate_backtracker
+
 reserved = reserved_cells(25, 20)
 maze = generate_backtracker(25, 20, reserved, random.Random(42), start=(0, 0))
-
-# Get the solution (shortest path)
 path = solve(maze, (0, 0), (24, 19))          # e.g. "EESS..."
 cells = solution_cells(maze, (0, 0), (24, 19)) # set of cells on the path
 
-# Access wall codes (bit0=N,1=E,2=S,3=W, closed=1)
-code = maze.cells[0][0]
+# Just validation
+from engine.validator import validate
+problems = validate(maze, (0, 0), (24, 19))
+
+# Just file output / terminal display
+from engine.output import write_maze, render_ascii
 ```
 
-Main modules:
+Or import everything at once from the package root:
 
-- `maze.py` — wall representation (`Maze`), `open_wall`, `bfs_distances`, `solve`, `solution_cells`
-- `initializer.py` — initial map generation and "42" sign placement
-- `generator.py` — generation algorithm and selection registry
-- `display.py` — ASCII rendering and display-mode registry
-- `validator.py` — condition checks
+```python
+from engine import Maze, generate_backtracker, braid, validate, write_maze, render_ascii
+```
+
+Modules:
+
+- `engine/maze.py` — wall representation (`Maze`), `open_wall`, `bfs_distances`, `solve`, `solution_cells`
+- `engine/build.py` — "42" sign reservation + initial map, generation algorithm and registry, braiding
+- `engine/validator.py` — condition checks (library + CLI)
+- `engine/output.py` — output-file writing (hex format) + ASCII rendering and display registry
+- `engine/errors.py` — exception hierarchy shared by the above
 
 The generator is also shipped as a self-contained, single-file `pip` package
 (`mazegen.py`). Pre-built artifacts (`mazegen-1.0.0-py3-none-any.whl` and
@@ -393,22 +416,23 @@ path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
 ## Team and project management
 
 - **Members and roles:**
-  - **naarai** — core & generation: `maze.py` (wall model, BFS/solve),
-    `generator.py` (recursive backtracker), `braiding.py` (non-perfect board),
-    and the `mazegen` reusable package.
-  - **ksadayas** — I/O & verification: `config.py` / `options.py` / `errors.py`
-    (config parsing), `writer.py`, `validator.py`, `display.py` (ASCII +
+  - **naarai** — core & generation: `engine/maze.py` (wall model, BFS/solve),
+    the generation and braiding sections of `engine/build.py` (non-perfect
+    board), and the `mazegen` reusable package.
+  - **ksadayas** — I/O & verification: `config.py` / `engine/errors.py`
+    (config parsing), `engine/output.py`, `engine/validator.py` (ASCII +
     interaction), tests, and docs.
   - _(Adjust the split above to match how the work was actually shared.)_
 - **Plan and evolution:** Built incrementally in the order
   "solving → initialization (42) → generation → output → display → validation",
   committing each feature in small steps.
 - **What went well:** Concentrating the wall representation in a single place
-  (`maze.py`) avoided discrepancies between generation, display, output, and
-  validation. Layering exceptions into fatal/non-fatal made errors easy to
+  (`engine/maze.py`) avoided discrepancies between generation, display, output,
+  and validation. Layering exceptions into fatal/non-fatal made errors easy to
   distinguish. The `PERFECT=False` mode meets the spec v2.2 playable-board
   rules (open four corners and centre, at least two independent loops, rare
-  dead ends), enforced in `braiding.py` and confirmed by `validator.py`.
+  dead ends), enforced by the braiding section of `engine/build.py` and
+  confirmed by `engine/validator.py`.
 - **What could improve:** Dead ends are kept rare but not driven to zero, so
   the "no dead end at all" bonus is not yet reached. The subject's
   `maze_analyzer.py` is not bundled, so cross-checking with it is manual. Only

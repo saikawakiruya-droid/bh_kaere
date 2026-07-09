@@ -1,12 +1,12 @@
-"""Dedicated program that checks whether a maze satisfies the spec IV.4 rules.
+"""Dedicated module that checks whether a maze satisfies the spec IV.4 rules.
 
 There are two ways to use it:
 
 1. **As a library** — call :func:`validate` right after generation to get the
    list of problems (empty means valid). The main pipeline uses this to confirm
    post-generation that "a compliant maze was produced".
-2. **As a command** — ``python validator.py <output_file>`` reads an output
-   file (spec IV.5 format) and validates its structure.
+2. **As a command** — ``python -m engine.validator <output_file>`` reads an
+   output file (spec IV.5 format) and validates its structure.
 
 Conditions checked:
 
@@ -18,6 +18,16 @@ Conditions checked:
 - No fully open 3x3 area (passages are at most 2 cells wide)
 - When ``PERFECT``, exactly one path between entry and exit (no cycles)
 - The attached shortest path is actually walkable and is shortest
+
+Standalone usage::
+
+    from engine.maze import Maze
+    from engine.validator import validate
+
+    maze = Maze(5, 5)
+    problems = validate(maze, entry=(0, 0), exit_=(4, 4))
+    if problems:
+        print(f"{len(problems)} problem(s):", *problems, sep="\n  - ")
 """
 
 from __future__ import annotations
@@ -25,7 +35,7 @@ from __future__ import annotations
 import sys
 from typing import List, Optional, Set, Tuple
 
-from maze import (
+from engine.maze import (
     DIRECTIONS,
     OPPOSITE,
     WALL_E,
@@ -322,7 +332,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     """CLI entry point. Validate an output file and print the result."""
     args = argv if argv is not None else sys.argv[1:]
     if len(args) != 1:
-        print("usage: python validator.py <output_file>")
+        print("usage: python -m engine.validator <output_file>")
         return 2
     try:
         maze, entry, exit_, path = _parse_output_file(args[0])
