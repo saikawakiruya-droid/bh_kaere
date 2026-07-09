@@ -102,6 +102,30 @@ def _placements(width: int, height: int, sign_w: int, sign_h: int
     return offs
 
 
+def _corridors_openable(width: int, height: int, reserved: Set[Coord],
+                        corridors: Set[Coord]) -> bool:
+    """Return whether every ``corridors`` cell can still become an open corridor.
+
+    Spec IV.4 (``PERFECT=False``) requires the four corners and the centre to be
+    **open corridors**, i.e. to end up with at least two openings. A cell can
+    only be opened toward a free (non-reserved) in-bounds neighbor, so it needs
+    at least two such neighbors. Reserving the "42" sign right around a corridor
+    cell would strangle it into a dead end that no braiding could repair.
+    """
+    for (x, y) in corridors:
+        if (x, y) in reserved:
+            return False
+        free_neighbors = sum(
+            1
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+            if 0 <= x + dx < width and 0 <= y + dy < height
+            and (x + dx, y + dy) not in reserved
+        )
+        if free_neighbors < 2:
+            return False
+    return True
+
+
 def _free_connected(width: int, height: int, reserved: Set[Coord]) -> bool:
     """Return whether the non-reserved (free) cells form one 4-connected group.
 
@@ -130,7 +154,8 @@ def _free_connected(width: int, height: int, reserved: Set[Coord]) -> bool:
 def reserved_cells(width: int, height: int,
                    text: str = "42",
                    avoid: Optional[Iterable[Coord]] = None,
-                   gap: Optional[int] = None) -> Set[Coord]:
+                   gap: Optional[int] = None,
+                   corridors: Optional[Iterable[Coord]] = None) -> Set[Coord]:
     """Return the sign's reserved-cell coordinates at a generatable placement.
 
     The sign is always the same fixed size (per the PDF). The decision is based
@@ -150,6 +175,11 @@ def reserved_cells(width: int, height: int,
         text: The string to draw.
         avoid: Coordinates the sign must not overlap (entry/exit, etc.).
         gap: Digit gap (``MIN_GAP``-``MAX_GAP``). ``None`` for auto-select.
+        corridors: Cells that must stay openable as through-corridors (the four
+            corners and the centre for a playable board, spec IV.4). A
+            placement that leaves any of them with fewer than two free
+            neighbors is rejected, since braiding could never lift it out of a
+            dead end.
 
     Returns:
         The set of cells ``(x, y)`` to keep closed.
@@ -157,10 +187,12 @@ def reserved_cells(width: int, height: int,
     Raises:
         SignTooBigError: If the sign does not fit the maze frame (width/height).
         SignOverlapError: If it fits the frame but no placement avoids
-            overlapping the entry/exit or disconnecting the maze.
+            overlapping the entry/exit, disconnecting the maze, or strangling a
+            required corridor cell.
     """
     sign_h = GLYPH_HEIGHT
     avoid_set = set(avoid) if avoid is not None else set()
+    corridor_set = set(corridors) if corridors is not None else set()
 
     # Gaps to try: auto -> 1 then 2; explicit -> only that value.
     if gap is None:
@@ -188,6 +220,9 @@ def reserved_cells(width: int, height: int,
             cells = {(off_x + rx, off_y + ry) for rx, ry in shape}
             if cells & avoid_set:
                 continue
+            if corridor_set and not _corridors_openable(
+                    width, height, cells, corridor_set):
+                continue
             if _free_connected(width, height, cells):
                 return cells
 
@@ -196,8 +231,8 @@ def reserved_cells(width: int, height: int,
             f"sign '{text}' does not fit the maze frame {width}x{height}"
         )
     raise SignOverlapError(
-        f"no position can place sign '{text}' "
-        f"(it would overlap the entry/exit or disconnect the maze)"
+        f"no position can place sign '{text}' (it would overlap the "
+        f"entry/exit, disconnect the maze, or strangle a corridor cell)"
     )
 
 
@@ -206,7 +241,7 @@ def initialize_maze(width: int, height: int,
                     exit_: Optional[Coord] = None,
                     sign: str = "42",
                     gap: Optional[int] = None,
-                    avoid_extra: Optional[Iterable[Coord]] = None
+                    corridors: Optional[Iterable[Coord]] = None
                     ) -> Tuple[Maze, Set[Coord]]:
     """Build an all-closed maze and reserve the "42" sign cells.
 
@@ -227,9 +262,10 @@ def initialize_maze(width: int, height: int,
         sign: The string to embed.
         gap: Digit gap (``MIN_GAP``-``MAX_GAP``). ``None`` to auto-select
             based on the width.
-        avoid_extra: Extra cells the sign must not overlap. Used by the
-            playable ``PERFECT=False`` mode to keep the four corners and the
-            centre free (spec IV.4), so they can become open corridors.
+        corridors: Cells that must become open corridors. Used by the playable
+            ``PERFECT=False`` mode to keep the four corners and the centre
+            free (spec IV.4). The sign neither overlaps them nor reserves so
+            many of their neighbors that they could not reach two openings.
 
     Returns:
         A ``(maze, reserved)`` tuple. ``maze`` is the all-closed maze, and
@@ -237,10 +273,10 @@ def initialize_maze(width: int, height: int,
     """
     maze = Maze(width, height)
     avoid = {c for c in (entry, exit_) if c is not None}
-    if avoid_extra is not None:
-        avoid |= set(avoid_extra)
+    if corridors is not None:
+        avoid |= set(corridors)
     try:
-        reserved = reserved_cells(width, height, sign, avoid, gap)
+        reserved = reserved_cells(width, height, sign, avoid, gap, corridors)
     except SignTooBigError as err:
         # The sign does not fit the maze frame.
         print(f"warning (does not fit): {err} / omitting sign '{sign}'")
