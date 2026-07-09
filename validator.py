@@ -146,12 +146,15 @@ def _check_playable(maze: Maze, entry: Coord,
     """Check the spec v2.2 "playable board" rules for ``PERFECT=False``.
 
     A default (non-perfect) maze must be usable by a Pac-Man-like game: the
-    four corners and the centre are open corridors, there are at least two
-    independent routes (loops), and dead ends stay rare.
+    four corners and the centre are open corridors (two or more openings each,
+    so they are through-corridors rather than dead ends), there are at least
+    two independent routes (loops), and dead ends stay rare.
     """
     problems: List[str] = []
 
     # Four corners and centre must be open (free) and reachable corridors.
+    # "Open corridor" means at least two openings: a cell with a single opening
+    # is a dead end, which the spec forbids for these cells.
     reachable: Set[Coord] = set()
     if maze.in_bounds(*entry):
         reachable = set(bfs_distances(maze, entry).keys())
@@ -162,6 +165,11 @@ def _check_playable(maze: Maze, entry: Coord,
             )
         elif (x, y) not in reachable:
             problems.append(f"corner/centre is not reachable: ({x},{y})")
+        elif _openings(maze, x, y) < 2:
+            problems.append(
+                f"corner/centre is a dead end, not an open corridor: "
+                f"({x},{y}) has {_openings(maze, x, y)} opening(s)"
+            )
 
     # At least two independent loops (a perfect maze, or one with a single
     # removed wall, is not acceptable).

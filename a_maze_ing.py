@@ -64,7 +64,7 @@ def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
     _, reserved = initialize_maze(
         config.width, config.height,
         entry=config.entry, exit_=config.exit,
-        sign=config.options.sign, avoid_extra=corridors)
+        sign=config.options.sign, corridors=corridors)
     generate = get_algorithm(config.options.algorithm)
     maze = generate(config.width, config.height, reserved, rng, config.entry)
     if not config.perfect:
