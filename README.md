@@ -2,462 +2,226 @@
 
 # A-Maze-ing — This is the way
 
-A custom maze generator. It takes a configuration file, generates a (optionally
-perfect) maze, and writes it to a file as a hex wall representation. It also
-provides ASCII rendering to the terminal and a dedicated verifier that checks
-whether the generated result satisfies the conditions.
-
+カスタム迷路ジェネレーターです。設定ファイルを読み込み、（必要に応じて完全迷路を）生成し、壁情報を 16 進数で表したファイルへ書き出します。ターミナルでの ASCII 表示機能と、生成結果が各条件を満たすか検査する専用バリデーターも備えています。
 
 ---
 
-## Description
+## 概要
 
-- Reads a configuration file (`KEY=VALUE`) and generates a maze.
-- At the center of the maze, a **"42"** drawn from several fully closed cells
-  emerges.
-- When `PERFECT=True`, there is exactly one path between entry and exit (a
-  spanning tree).
-- When `PERFECT=False`, it produces a **playable Pac-Man board**
-  (spec IV.4, v2.2): open four corners and centre, at least two independent
-  loops, and only rare dead ends.
-- After generation it automatically verifies the conditions (connectivity,
-  wall consistency, border, no 3x3 opening, shortest path, and — for
-  `PERFECT=False` — the playable-board rules).
-- The output file uses the spec's hex format and can be checked with the
-  bundled verifier or the Moulinette.
-- A deeper code-flow walkthrough (with a diagram) is on Notion:
-  https://app.notion.com/p/3987e1ed867f81a8ab6af4b874cec007
+- 設定ファイル（`KEY=VALUE` 形式）を読み込み、迷路を生成します。
+- 迷路の中央には、完全に閉じた複数のセルで描かれた **「42」** が現れます。
+- `PERFECT=True` の場合、入口と出口の間には経路がちょうど 1 つだけ存在します（全域木）。
+- 生成後に、各条件（連結性、壁の整合性、外周、3×3 の開放領域がないこと、最短経路など）を自動検証します。
+- 出力ファイルは課題仕様の 16 進形式で、同梱バリデーターで検査できます。
 
 ---
 
-## File layout (submitted code vs. tests)
+## ファイル構成（提出コードとテスト）
 
-**Submitted / graded (repository root):**
+**提出・採点対象（リポジトリ直下）:**
 
-| File | Role |
+| ファイル | 役割 |
 |------|------|
-| `a_maze_ing.py` | Main program (entry point) |
-| `mazegen.py` | Reusable module (single file) |
-| `mazegen-1.0.0-*.whl` / `.tar.gz` | Pre-built packages |
-| `LICENSE.md` | MIT license permitting reuse of the `mazegen` module (spec VI) |
-| `config.txt` / `Makefile` / `pyproject.toml` / `setup.cfg` / `README.md` | Config, build, docs |
+| `a_maze_ing.py` | メインプログラム（エントリーポイント） |
+| `maze.py` | コア機能（壁の表現、開閉、BFS 距離、最短経路） |
+| `initializer.py` | 初期マップの生成と「42」記号の配置 |
+| `generator.py` | 生成アルゴリズムと選択用レジストリ |
+| `braiding.py` | 不完全迷路への変換（`PERFECT=False`） |
+| `display.py` | ASCII 描画と表示モード用レジストリ |
+| `config.py` / `options.py` | 必須キーの検証／任意キーの処理 |
+| `errors.py` | 例外クラスの階層 |
+| `writer.py` | 出力ファイルへの書き込み（16 進形式） |
+| `validator.py` | 生成後の条件検証（ライブラリ／CLI） |
+| `mazegen.py` | 再利用可能な単一ファイルモジュール |
+| `mazegen-1.0.0-*.whl` / `.tar.gz` | ビルド済みパッケージ |
+| `config.txt` / `Makefile` / `pyproject.toml` / `setup.cfg` / `README.md` | 設定、ビルド、ドキュメント |
+| `examples/` | 初期化マップおよび生成結果のサンプル |
 
-The maze pipeline is organized into small packages by role — each module can be
-imported on its own (see "Reusable code and usage" below). Note the distinction
-between **validation** (checking the config-file *input* before a maze is
-built) and **verification** (checking the already-*built* maze's structure) —
-these are two separate processes, not two stages of the same one:
+**テスト用（提出・採点対象外。仕様 III.3）:**
 
-| Directory | Role |
-|------|------|
-| `core/` | `maze.py` (wall representation, BFS, shortest path), `metrics.py` (loop / dead-end counting, shared by `braiding/` and `verification/`), `errors.py` (exception hierarchy) |
-| `validation/` | Config-file **input checking**: `config.py` (required keys) and `options.py` (optional keys) |
-| `generation/` | `initializer.py` ("42" sign reservation + initial map), `backtracker.py` (the algorithm), `generator.py` (algorithm selection registry) |
-| `braiding/` | `braiding.py` — imperfect-maze / playable-board conversion (`PERFECT=False`) |
-| `verification/` | Post-generation **maze-structure checking**: `verifier.py` (library: `validate()` + condition checks) and `cli.py` (standalone `python -m verification.cli <file>`) |
-| `output/` | `writer.py` (spec IV.5 file output), `ascii_display.py` (ASCII rendering), `display.py` (display-mode selection registry) |
+- `tests/` 配下の `test_*.py`：動作確認用です。`make test` で実行します。
 
-**For testing (not submitted / graded. Spec III.3):**
-
-- `test_*.py` under `tests/` … for behavior verification. Run with `make test`.
-- `examples/` … sample outputs kept for development only. Every scenario they
-  cover is reproduced by the "Usage examples" section below, so the directory
-  itself is not part of the submission.
-
-> Because the tests are separated into `tests/`, they are clearly distinct from
-> the submitted code (the `*.py` at the root). The tests are solely for
-> verifying the project's behavior.
+> テストは `tests/` に分離しているため、提出コード（リポジトリ直下の `*.py`）と明確に区別されています。テストはプロジェクトの動作確認だけを目的としています。
 
 ---
 
-## Instructions (install / run)
+## 使い方（インストール／実行）
 
-### Dependencies
+### 依存関係
 
-No external libraries are required to run (standard library only). For
-development, `flake8` / `mypy` / `pytest` are used.
+実行に外部ライブラリは不要です（標準ライブラリのみ使用）。開発時には `flake8`、`mypy`、`pytest` を使用します。
 
-### Setup and run
+### セットアップと実行
 
 ```bash
-# Install dev tools (grading environment)
+# 開発ツールのインストール
 make install
 
-# Generate and display a maze (using the default config.txt)
+# デフォルトの config.txt を使って迷路を生成・表示
 make run
 
-# Specify a different config file
+# 別の設定ファイルを指定
 make run CONFIG=my_config.txt
 
-# Debug run (pdb)
+# デバッグ実行（pdb）
 make debug
 
-# Tests
+# テスト
 make test
 
-# Static checks (flake8 + mypy)
+# 静的検査（flake8 + mypy）
 make lint
 ```
 
-To run directly:
+直接実行する場合:
 
 ```bash
 python3 a_maze_ing.py config.txt
 ```
 
-> Note: `make install` builds an isolated virtual environment in `./.venv`
-> (preferring `uv`, falling back to the stdlib `venv`), and `run` / `debug` /
-> `test` / `lint` use that environment automatically. The Python version is
-> pinned via `PY_VERSION` (default `3.12`, e.g. `make install PY_VERSION=3.11`).
-> It is only a preference — on a machine without that version the build falls
-> back to any available `python3`, so `make` works in any environment. Remove
-> the environment with `make distclean`.
+> 注記：このリポジトリの開発環境では `uv` で仮想環境を作成しています。ローカルで実行する場合は、`uv venv .venv && uv pip install --python .venv flake8 mypy pytest` の後、Windows では `make run PYTHON=.venv/Scripts/python.exe` のように Python を指定できます。
 
-> Note: `flake8` is configured with `max-line-length = 100` in `setup.cfg`
-> (a deliberate relaxation of the default 79 to keep docstrings and type hints
-> readable). `make lint` runs `flake8 .` and `mypy .` with the subject's flags.
+> 注記：`setup.cfg` では `flake8` の `max-line-length = 100` を設定しています。これは、docstring と型ヒントの可読性を保つために、標準の 79 文字を意図的に緩和したものです。`make lint` は課題指定のフラグで `flake8 .` と `mypy .` を実行します。
 
-### Validating the output file
+### 出力ファイルの検証
 
 ```bash
-python3 -m verification.cli maze.txt
+python3 validator.py maze.txt
 ```
 
 ---
 
-## Usage examples (verification checklist)
+## 設定ファイルの構造と形式
 
-The `examples/` directory is not part of the submission, so every scenario can
-be reproduced with the commands below. Each example lists **what to check**, so
-it doubles as an evaluation checklist.
+1 行につき 1 つの `KEY=VALUE` を記述します。`#` で始まる行と空行は無視されます。
 
-### 1. Standard perfect maze (default `config.txt`)
+### 必須キー
 
-```bash
-python3 a_maze_ing.py config.txt
-```
-
-- [ ] The ASCII rendering shows the **"42"** pattern near the centre, drawn
-      from fully closed cells.
-- [ ] Entry, exit, and the shortest path are visible in the rendering.
-- [ ] `maze.txt` is written: hex grid (one row per line), one blank line, then
-      3 lines (entry `x,y` / exit `x,y` / path of `N`/`E`/`S`/`W`), every line
-      ending with `\n`.
-- [ ] No `warning:` lines are printed (the built-in post-generation verification
-      passed: connectivity, wall consistency, border walls, no 3x3 open area,
-      exactly one path for `PERFECT=True`).
-- [ ] `python3 -m verification.cli maze.txt` prints `OK`.
-
-### 2. Reproducibility via seed
-
-```bash
-python3 a_maze_ing.py config.txt   # SEED=42 in config.txt
-mv maze.txt run1.txt
-python3 a_maze_ing.py config.txt
-diff maze.txt run1.txt             # no output = identical
-```
-
-- [ ] With the same `SEED`, two runs produce byte-identical output files.
-- [ ] With the `SEED` line removed, runs produce different mazes.
-
-### 3. Playable board (`PERFECT=False`)
-
-```bash
-printf 'WIDTH=25\nHEIGHT=20\nENTRY=0,0\nEXIT=24,19\nOUTPUT_FILE=maze.txt\nPERFECT=False\nSEED=42\n' > imperfect.txt
-python3 a_maze_ing.py imperfect.txt
-```
-
-- [ ] No `warning:` lines are printed: the built-in playable-board verification
-      passed (open four corners and centre, at least two independent loops, and
-      only rare dead ends — spec IV.4, v2.2).
-- [ ] The maze contains loops (`braiding/braiding.py`); toggling the path display
-      shows alternative corridors, and `python3 -m verification.cli maze.txt`
-      reports `OK`.
-- [ ] Full connectivity: no isolated cells besides the "42" pattern.
-
-### 4. Sign relocation when entry/exit sit in the centre
-
-```bash
-printf 'WIDTH=20\nHEIGHT=15\nENTRY=10,7\nEXIT=19,14\nOUTPUT_FILE=maze.txt\nPERFECT=True\nSEED=1\n' > center.txt
-python3 a_maze_ing.py center.txt
-```
-
-- [ ] The "42" is relocated so it does not overlap the entry; no omission
-      warning is printed.
-
-### 5. Maze too small for the sign (spec IV.4 fallback)
-
-```bash
-printf 'WIDTH=5\nHEIGHT=5\nENTRY=0,0\nEXIT=4,4\nOUTPUT_FILE=maze.txt\nPERFECT=True\nSEED=1\n' > tiny.txt
-python3 a_maze_ing.py tiny.txt
-```
-
-- [ ] A console message states the sign is omitted (`warning (does not fit)`).
-- [ ] The maze is still generated, verified, and written normally.
-
-### 6. Error handling (never crashes, spec IV.2)
-
-```bash
-python3 a_maze_ing.py no_such_file.txt   # missing file
-python3 a_maze_ing.py                    # missing argument -> usage
-printf 'WIDTH=20\n' > broken.txt
-python3 a_maze_ing.py broken.txt         # missing required keys
-printf 'WIDTH=20\nHEIGHT=15\nENTRY=0,0\nEXIT=0,0\nOUTPUT_FILE=m.txt\nPERFECT=True\n' > same.txt
-python3 a_maze_ing.py same.txt           # ENTRY == EXIT
-```
-
-- [ ] Each case prints a clear, cause-specific error message (no traceback)
-      and exits with a non-zero code.
-
-### 7. User interactions (spec V)
-
-```bash
-python3 a_maze_ing.py config.txt   # run in an interactive terminal
-```
-
-After the maze is drawn, an interactive menu is shown (only when stdin/stdout
-is a real terminal — it is skipped for pipes so automated runs never hang):
-
-```text
-=== A-Maze-ing ===
-1. Regenerate a new maze (next seed: 43)
-2. Regenerate with a specified seed
-3. Toggle the shortest-path display
-4. Change the wall color (current: none)
-5. Quit (current seed: 42)
-choice (1-5):
-```
-
-- [ ] Menu `1`/`2`: regenerate a new maze (auto-incremented or specified seed).
-- [ ] Menu `3`: toggle the shortest-path display on/off.
-- [ ] Menu `4`: cycle the wall color.
-- [ ] Menu `5` (or EOF): quit cleanly.
-
----
-
-## Configuration file structure and format
-
-One `KEY=VALUE` per line. Lines starting with `#` and blank lines are ignored.
-
-### Required keys (handled by `validation/config.py`)
-
-| Key | Description | Example |
+| キー | 説明 | 例 |
 |------|------|-----|
-| `WIDTH` | Maze width (cells, 1 or more) | `WIDTH=25` |
-| `HEIGHT` | Maze height (cells, 1 or more) | `HEIGHT=20` |
-| `ENTRY` | Entry coordinate `x,y` | `ENTRY=0,0` |
-| `EXIT` | Exit coordinate `x,y` (different from entry) | `EXIT=24,19` |
-| `OUTPUT_FILE` | Output file name | `OUTPUT_FILE=maze.txt` |
-| `PERFECT` | Whether to make a perfect maze (`True`/`False`) | `PERFECT=True` |
+| `WIDTH` | 迷路の幅（セル数、1 以上） | `WIDTH=25` |
+| `HEIGHT` | 迷路の高さ（セル数、1 以上） | `HEIGHT=20` |
+| `ENTRY` | 入口座標 `x,y` | `ENTRY=0,0` |
+| `EXIT` | 出口座標 `x,y`（入口とは異なること） | `EXIT=24,19` |
+| `OUTPUT_FILE` | 出力ファイル名 | `OUTPUT_FILE=maze.txt` |
+| `PERFECT` | 完全迷路にするか（`True`／`False`） | `PERFECT=True` |
 
-### Optional keys (handled by `validation/options.py`)
+### 任意キー（`options.py` で処理）
 
-| Key | Description | Default |
+| キー | 説明 | デフォルト |
 |------|------|--------|
-| `SEED` | Random seed (reproducibility) | none (random each run) |
-| `ALGORITHM` | Generation algorithm name | `backtracker` |
-| `DISPLAY` | Display-mode name | `ascii` |
-| `SIGN` | String to embed | `42` |
+| `SEED` | 乱数シード（再現性の確保） | なし（実行ごとにランダム） |
+| `ALGORITHM` | 生成アルゴリズム名 | `backtracker` |
+| `DISPLAY` | 表示モード名 | `ascii` |
+| `SIGN` | 埋め込む文字列 | `42` |
 
-Invalid values become errors distinguished per cause (`ConfigParseError` /
-`ConfigKeyError` / `ConfigValueError`), print a clear message, and exit.
-
----
-
-## Output file format (spec IV.5)
-
-- Each cell is a single upper-case hex digit. Closed walls are encoded as bits:
-  `bit0=north, bit1=east, bit2=south, bit3=west` (1 if closed).
-- One line of cells per row.
-- One blank line, then 3 lines: entry `x,y` / exit `x,y` / shortest path
-  (concatenation of `N`/`E`/`S`/`W`).
-- Every line ends with `\n`.
+不正な値は原因ごとに区別されたエラー（`ConfigParseError`／`ConfigKeyError`／`ConfigValueError`）となり、分かりやすいメッセージを表示して終了します。
 
 ---
 
-## Algorithms used and rationale
+## 出力ファイル形式（仕様 IV.5）
 
-### Generation: recursive backtracker (iterative)
-
-Starting from every cell closed by walls, it carves randomly depth-first and
-backtracks the stack at dead ends. Because it connects all cells into a single
-tree (a **spanning tree**), it naturally satisfies `PERFECT=True` (exactly one
-path between any two points).
-
-**Rationale:**
-
-- Guarantees a perfect maze (DFS tree = spanning tree).
-- Simple to implement, concentrated on a single random source
-  (`random.Random(seed)`) for strong reproducibility.
-- Implemented iteratively with an explicit stack, so even large mazes do not
-  hit Python's recursion limit.
-- By simply not carving the "42" reserved cells, the sign remains within the
-  passages.
-
-The algorithm can be selected with the `ALGORITHM` key (currently only
-`backtracker`); the design lets you register e.g. Prim's or Kruskal's algorithm
-as a sibling of `generation/backtracker.py` and add it to `ALGORITHMS` in
-`generation/generator.py` to select it directly.
-
-### Playable board when `PERFECT=False` (spec IV.4, v2.2)
-
-The `PERFECT=False` mode must be a board usable by a Pac-Man-like game, not
-just a maze with a few loops. After the backtracker builds a spanning tree,
-`braiding/braiding.py` reshapes it in three phases:
-
-1. **Dead-end reduction** — each dead end opens one wall to connect elsewhere,
-   so a chased player is rarely trapped.
-2. **Corridor enforcement** — the four corners and the centre (kept free of the
-   "42" sign by `generation/initializer.py`) are given at least two openings, so
-   the ghosts' corners and the player's central start are real corridors.
-3. **Loop guarantee** — extra walls are opened until there are **at least two
-   independent loops** (a perfect maze, or one with a single removed wall, is
-   rejected).
-
-Every wall removal is checked so it never creates a fully open 3x3 area, and
-reserved "42" cells are never touched. Connectivity is preserved because walls
-are only opened. Reaching **zero** dead ends is the subject's bonus; the
-generator keeps them rare (typically a couple).
-
-### Solving: BFS (breadth-first search)
-
-It computes the shortest distance from the entry and the exit to each cell, and
-obtains the shortest path (and all cells on it). Because it is BFS, it
-guarantees shortest paths even for imperfect mazes.
+- 各セルは大文字の 16 進数 1 桁で表します。閉じた壁はビットで符号化されます：`bit0=北、bit1=東、bit2=南、bit3=西`（閉じている場合は 1）。
+- 1 行が迷路の 1 行分のセルに対応します。
+- 空行を 1 行挟んだ後、入口 `x,y`、出口 `x,y`、最短経路（`N`／`E`／`S`／`W` を連結した文字列）の計 3 行を記述します。
+- すべての行は `\n` で終わります。
 
 ---
 
-## Post-generation verification (`verification/verifier.py` + `verification/cli.py`)
+## 使用アルゴリズムと採用理由
 
-This is a **different process from config-file validation** (see
-"Configuration file structure and format" above): validation checks the
-config *input* before a maze is built; verification checks the already-*built*
-maze's structure. The dedicated verifier confirms the generated maze satisfies
-the spec IV.4 conditions:
+### 生成：再帰的バックトラッカー（反復実装）
 
-- Entry and exit are in bounds and differ from each other
-- Outward walls of border cells are closed
-- Adjacent cells share their walls consistently
-- Every cell except the "42" (`0xF` closed cells) is connected
-- No fully open 3x3 area (passages are at most 2 cells wide)
-- When `PERFECT`, exactly one path (no cycles)
-- When `PERFECT=False` (opt-in `playable` check): the four corners and centre
-  are open corridors, there are at least two independent loops, and dead ends
-  stay rare
-- The attached shortest path is actually walkable and shortest
+すべてのセルが壁で閉じた状態から始め、深さ優先でランダムに通路を掘り進め、行き止まりではスタックを戻ります。全セルを 1 本の木として接続するため（**全域木**）、`PERFECT=True` の条件、すなわち任意の 2 点間に経路がちょうど 1 つ存在することを自然に満たします。
 
-The main program runs this verification right after generation and warns on
-any problem. It can be used both as a library (`verification.verifier.validate()`,
-with a `playable` flag) and as a standalone CLI
-(`python3 -m verification.cli <file>`, in `verification/cli.py`). The CLI
-verifies structure only, because an output file does not record the intended
-mode; the subject's `maze_analyzer.py` (not bundled here) can additionally
-classify a file as perfect or playable.
+**採用理由:**
+
+- 完全迷路を保証できます（DFS 木＝全域木）。
+- 実装がシンプルで、乱数源を `random.Random(seed)` の 1 か所に集約できるため、再現性が高くなります。
+- 明示的なスタックを使う反復実装のため、大きな迷路でも Python の再帰上限に達しません。
+- 「42」用に予約したセルは掘らないだけで、記号を通路の中に保てます。
+
+アルゴリズムは `ALGORITHM` キーで選択できます（現在は `backtracker` のみ）。`generator.py` の `ALGORITHMS` に、たとえば Prim 法や Kruskal 法を登録すれば直接選択できる設計です。
+
+### 求解：BFS（幅優先探索）
+
+入口および出口から各セルまでの最短距離を計算し、最短経路とその経路上の全セルを取得します。BFS を用いるため、不完全迷路でも最短経路が保証されます。
 
 ---
 
-## Reusable code and usage
+## 生成後の検証（`validator.py`）
 
-The pipeline (initial map, generation, braiding, verification, output,
-display) is organized into small packages by role, not one bundling package —
-each module has no dependency on `a_maze_ing.py`, so **any single module can be
-imported on its own**: copy just the one file (plus `core/maze.py` and
-`core/errors.py`, its only dependencies) into another project if you only need
-that one stage. Every module's own docstring has a "Standalone usage" example.
+専用バリデーターは、生成した迷路が仕様 IV.4 の条件を満たすことを確認します。
 
-Pick just one stage:
+- 入口と出口が範囲内にあり、互いに異なること
+- 外周セルの外向きの壁が閉じていること
+- 隣接セル間で共有する壁に矛盾がないこと
+- 「42」（完全に閉じた `0xF` セル）を除くすべてのセルが連結していること
+- 完全に開いた 3×3 領域がないこと（通路幅は最大 2 セル）
+- `PERFECT` の場合、経路がちょうど 1 つであること（閉路がないこと）
+- 付記された最短経路が実際に通行可能で、かつ最短であること
+
+メインプログラムは生成直後にこの検証を実行し、問題があれば警告します。ライブラリ（`validate()`）としても CLI（`python3 validator.py <file>`）としても利用できます。
+
+---
+
+## 再利用可能なコードと使用例
+
+迷路の生成、求解、壁の表現はモジュールとして再利用できます。
 
 ```python
-# Just the core data structure + BFS solving
-from core.maze import Maze, solve, solution_cells
-
-# Just generation (sign reservation + recursive backtracker)
 import random
-from generation.initializer import reserved_cells
-from generation.backtracker import generate_backtracker
+from maze import Maze, solve, solution_cells
+from generator import generate_backtracker
+from initializer import reserved_cells
 
+# 「42」用セルを予約して迷路を生成
 reserved = reserved_cells(25, 20)
 maze = generate_backtracker(25, 20, reserved, random.Random(42), start=(0, 0))
-path = solve(maze, (0, 0), (24, 19))          # e.g. "EESS..."
-cells = solution_cells(maze, (0, 0), (24, 19)) # set of cells on the path
 
-# Just braiding (PERFECT=False playable-board conversion)
-from braiding.braiding import braid
-braid(maze, reserved, random.Random(1), min_loops=2)
+# 解（最短経路）を取得
+path = solve(maze, (0, 0), (24, 19))           # 例: "EESS..."
+cells = solution_cells(maze, (0, 0), (24, 19)) # 経路上にあるセルの集合
 
-# Just verification
-from verification.verifier import validate
-problems = validate(maze, (0, 0), (24, 19))
-
-# Just file output / terminal display
-from output.writer import write_maze
-from output.ascii_display import render_ascii
+# 壁コードにアクセス（bit0=N、bit1=E、bit2=S、bit3=W、閉じている場合は 1）
+code = maze.cells[0][0]
 ```
 
-Directories:
+主なモジュール:
 
-- `core/` — `maze.py` (core `Maze` class: `open_wall`, `bfs_distances`, `solve`, `solution_cells`), `metrics.py` (`count_loops`, `count_dead_ends` — shared by braiding and verification), `errors.py` (exception hierarchy)
-- `validation/` — `config.py` (required-key input checking), `options.py` (optional-key input checking)
-- `generation/` — `initializer.py` ("42" sign reservation + initial map), `backtracker.py` (the recursive-backtracker algorithm), `generator.py` (algorithm selection registry: `get_algorithm`, `algorithm_names`)
-- `braiding/` — `braiding.py` (imperfect-maze / playable-board conversion)
-- `verification/` — `verifier.py` (`validate()` + condition checks), `cli.py` (standalone output-file CLI)
-- `output/` — `writer.py` (output-file writing, hex format), `ascii_display.py` (ASCII rendering), `display.py` (display-mode selection registry: `get_display_mode`, `display_names`)
+- `maze.py`：壁の表現（`Maze`）、`bfs_distances`、`solve`、`solution_cells`
+- `initializer.py`：初期マップの生成と「42」記号の配置
+- `generator.py`：生成アルゴリズムと選択用レジストリ
+- `display.py`：ASCII 描画と表示モード用レジストリ
+- `validator.py`：条件検証
 
-The generator is also shipped as a self-contained, single-file `pip` package
-(`mazegen.py`). Pre-built artifacts (`mazegen-1.0.0-py3-none-any.whl` and
-`mazegen-1.0.0.tar.gz`) are at the repository root, and the package can be
-rebuilt from source with `python -m build` (see `pyproject.toml`). It is
-released under the MIT license (`LICENSE.md`), which explicitly allows reuse by
-later 42 projects.
+ジェネレーターは、自己完結した単一ファイルの `pip` パッケージ（`mazegen.py`）としても配布されています。ビルド済み成果物（`mazegen-1.0.0-py3-none-any.whl` と `mazegen-1.0.0.tar.gz`）はリポジトリ直下にあります。MIT ライセンス（`LICENSE.md`）で公開しており、後続の 42 プロジェクトでの再利用が明示的に許可されています。
 
 ```python
 from mazegen import MazeGenerator
 
 gen = MazeGenerator(20, 15, seed=1, perfect=False).generate()
-grid = gen.grid                       # 2D array of 4-bit wall codes
-path = gen.solution((0, 0), (19, 14)) # shortest path "N/E/S/W"
+grid = gen.grid                       # 4 ビットの壁コードからなる 2 次元配列
+path = gen.solution((0, 0), (19, 14)) # 最短経路 "N/E/S/W"
 ```
 
 ---
 
-## Team and project management
+## チームとプロジェクト管理
 
-- **Members and roles:**
-  - **naarai** — core & generation: `core/maze.py` (wall model, BFS/solve),
-    `generation/backtracker.py` / `braiding/braiding.py` (non-perfect board), and the
-    `mazegen` reusable package.
-  - **ksadayas** — I/O & verification: `validation/config.py` /
-    `validation/options.py` / `core/errors.py` (config parsing),
-    `output/writer.py` / `output/ascii_display.py`, `verification/verifier.py`
-    (ASCII + interaction), tests, and docs.
-  - _(Adjust the split above to match how the work was actually shared.)_
-- **Plan and evolution:** Built incrementally in the order
-  "solving → initialization (42) → generation → output → display →
-  verification", committing each feature in small steps.
-- **What went well:** Concentrating the wall representation in a single place
-  (`core/maze.py`) avoided discrepancies between generation, display, output,
-  and verification. Layering exceptions into fatal/non-fatal made errors easy
-  to distinguish. The `PERFECT=False` mode meets the spec v2.2 playable-board
-  rules (open four corners and centre, at least two independent loops, rare
-  dead ends), enforced by `braiding/braiding.py` and confirmed by
-  `verification/verifier.py`.
-- **What could improve:** Dead ends are kept rare but not driven to zero, so
-  the "no dead end at all" bonus is not yet reached. The subject's
-  `maze_analyzer.py` is not bundled, so cross-checking with it is manual. Only
-  the recursive backtracker is implemented (the `ALGORITHMS` registry is ready
-  for Prim/Kruskal as a bonus), and the visual layer is ASCII-only — an MLX
-  display remains an open task.
+- **メンバーと担当:**
+  - **naarai**：コア機能と生成。`maze.py`（壁モデル、BFS／求解）、`generator.py`（再帰的バックトラッカー）、`braiding.py`（不完全迷路用ボード）、および再利用可能な `mazegen` パッケージを担当。
+  - **ksadayas**：I/O と検証。`config.py`／`options.py`／`errors.py`（設定解析）、`writer.py`、`validator.py`、`interact`（ASCII 表示と対話）、テスト、ドキュメントを担当。
+- **計画と発展:** 「求解 → 初期化（42）→ 生成 → 出力 → 表示 → 検証」の順で段階的に構築し、各機能を小さな単位でコミットしました。
+- **うまくいった点:** 壁の表現を 1 か所（`maze.py`）に集約したことで、生成・表示・出力・検証の不整合を防げました。例外を致命的／非致命的に分けたことで、エラーの判別も容易になりました。`PERFECT=False` のボードは行き止まりなしのボーナス評価を達成しています。
+- **改善できる点:** 実装済みの生成アルゴリズムは再帰的バックトラッカーのみです（`ALGORITHMS` レジストリはボーナスとして Prim 法／Kruskal 法を追加できるよう準備済み）。また、表示は ASCII のみで、MLX による表示は今後の課題です。
 
 ---
 
-## Resources (references / AI usage)
+## 参考資料（参照先／AI 利用）
 
-- General explanations of maze generation algorithms (recursive backtracker /
-  Prim / Kruskal)
-- The correspondence between spanning trees in graph theory and perfect mazes
-- The exact shape of the "42" sign was taken from the figure in the assignment
-  PDF (`a_maze_ing.pdf`)
+- 迷路生成アルゴリズム（再帰的バックトラッカー／Prim 法／Kruskal 法）の一般的な解説
+- グラフ理論における全域木と完全迷路の対応関係
+- 「42」記号の正確な形状は、課題 PDF（`a_maze_ing.pdf`）の図から取得
 
-**AI usage:** AI was used for design brainstorming, implementing each module
-with docstrings and type annotations, writing tests, extracting the "42" shape
-from the PDF (image analysis), and polishing the README.
+**AI の利用:** 設計のブレインストーミング、各モジュールの docstring・型注釈付き実装、テスト作成、PDF からの「42」形状の抽出（画像解析）、README の推敲に AI を利用しました。

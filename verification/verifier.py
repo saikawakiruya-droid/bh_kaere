@@ -1,14 +1,12 @@
-"""Library-side maze verification: checks whether a maze satisfies spec IV.4.
+"""Dedicated program that checks whether a maze satisfies the spec IV.4 rules.
 
-Call :func:`validate` right after generation to get the list of problems
-(empty means valid). The main pipeline uses this to confirm post-generation
-that "a compliant maze was produced". This is distinct from *validation*
-(:mod:`validation.config` / :mod:`validation.options`), which checks the
-config-file *input* before a maze is even built — this module *verifies* the
-already-built maze's structure instead.
+There are two ways to use it:
 
-For the standalone CLI (``python -m verification.cli <output_file>``, which
-reads an output file and calls :func:`validate` on it), see :mod:`verification.cli`.
+1. **As a library** — call :func:`validate` right after generation to get the
+   list of problems (empty means valid). The main pipeline uses this to confirm
+   post-generation that "a compliant maze was produced".
+2. **As a command** — ``python validator.py <output_file>`` reads an output
+   file (spec IV.5 format) and validates its structure.
 
 Conditions checked:
 
@@ -20,23 +18,14 @@ Conditions checked:
 - No fully open 3x3 area (passages are at most 2 cells wide)
 - When ``PERFECT``, exactly one path between entry and exit (no cycles)
 - The attached shortest path is actually walkable and is shortest
-
-Standalone usage::
-
-    from core.maze import Maze
-    from verification.verifier import validate
-
-    maze = Maze(5, 5)
-    problems = validate(maze, entry=(0, 0), exit_=(4, 4))
-    if problems:
-        print(f"{len(problems)} problem(s):", *problems, sep="\n  - ")
 """
 
 from __future__ import annotations
 
+import sys
 from typing import List, Optional, Set, Tuple
 
-from core.maze import (
+from maze import (
     DIRECTIONS,
     OPPOSITE,
     WALL_E,
@@ -46,7 +35,6 @@ from core.maze import (
     Maze,
     bfs_distances,
 )
-from core.metrics import count_loops
 
 Coord = Tuple[int, int]
 
@@ -142,66 +130,6 @@ def _check_no_open_3x3(maze: Maze) -> List[str]:
     return problems
 
 
-def _special_cells(maze: Maze) -> Set[Coord]:
-    """Return the four corners and the centre (Pac-Man corridors, spec IV.4)."""
-    w, h = maze.width, maze.height
-    return {(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, h // 2)}
-
-
-def _check_playable(maze: Maze, entry: Coord,
-                    reserved: Set[Coord]) -> List[str]:
-    """Check the spec v2.2 "playable board" rules for ``PERFECT=False``.
-
-    A default (non-perfect) maze must be usable by a Pac-Man-like game: the
-    four corners and the centre are open corridors (two or more openings each,
-    so they are through-corridors rather than dead ends), there are at least
-    two independent routes (loops), and dead ends stay rare.
-    """
-    problems: List[str] = []
-
-    # Four corners and centre must be open (free) and reachable corridors.
-    # "Open corridor" means at least two openings: a cell with a single opening
-    # is a dead end, which the spec forbids for these cells.
-    reachable: Set[Coord] = set()
-    if maze.in_bounds(*entry):
-        reachable = set(bfs_distances(maze, entry).keys())
-    for (x, y) in sorted(_special_cells(maze)):
-        if (x, y) in reserved or maze.cells[y][x] == 0xF:
-            problems.append(
-                f"corner/centre is closed, not an open corridor: ({x},{y})"
-            )
-        elif (x, y) not in reachable:
-            problems.append(f"corner/centre is not reachable: ({x},{y})")
-        elif maze.count_openings(x, y) < 2:
-            problems.append(
-                f"corner/centre is a dead end, not an open corridor: "
-                f"({x},{y}) has {maze.count_openings(x, y)} opening(s)"
-            )
-
-    # At least two independent loops (a perfect maze, or one with a single
-    # removed wall, is not acceptable).
-    free_count = maze.width * maze.height - len(reserved)
-    if free_count > 0:
-        loops = count_loops(maze, reserved)
-        if loops < 2:
-            problems.append(
-                f"playable board needs at least 2 independent loops, "
-                f"found {loops}"
-            )
-
-    # Dead ends should be rare (a couple are tolerated; zero is the bonus).
-    dead = [(x, y)
-            for y in range(maze.height) for x in range(maze.width)
-            if (x, y) not in reserved and maze.count_openings(x, y) == 1]
-    threshold = max(4, free_count // 25)
-    if len(dead) > threshold:
-        problems.append(
-            f"too many dead ends for a playable board: {len(dead)} "
-            f"(tolerated up to {threshold})"
-        )
-    return problems
-
-
 def _count_open_edges(maze: Maze, reserved: Set[Coord]) -> int:
     """Count the number of open passages (edges) between free cells."""
     edges = 0
@@ -255,8 +183,7 @@ def _check_solution(maze: Maze, entry: Coord, exit_: Coord,
 def validate(maze: Maze, entry: Coord, exit_: Coord,
              reserved: Optional[Set[Coord]] = None,
              perfect: bool = False,
-             solution: Optional[str] = None,
-             playable: bool = False) -> List[str]:
+             solution: Optional[str] = None) -> List[str]:
     """Validate the maze against all conditions and return the list of problems.
 
     Args:
@@ -266,10 +193,6 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
         reserved: Set of reserved cells ("42"); empty if omitted.
         perfect: Whether a perfect maze is required.
         solution: The attached shortest path (validated if present).
-        playable: Whether the spec v2.2 "playable Pac-Man board" rules apply
-            (open corners/centre, at least two loops, rare dead ends). This is
-            opt-in: the output-file CLI leaves it off because a file does not
-            record the intended mode.
 
     Returns:
         A list of problem messages. Empty means all conditions are satisfied.
@@ -285,8 +208,67 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
     problems += _check_no_open_3x3(maze)
     if perfect:
         problems += _check_perfect(maze, reserved)
-    if playable:
-        problems += _check_playable(maze, entry, reserved)
     if solution is not None:
         problems += _check_solution(maze, entry, exit_, solution)
     return problems
+
+
+def _parse_output_file(path: str) -> Tuple[Maze, Coord, Coord, str]:
+    """Read an output file (spec IV.5 format) and reconstruct the maze/endpoints/path."""
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.read().split("\n")
+    # Drop one trailing blank line (from the final \n).
+    if lines and lines[-1] == "":
+        lines.pop()
+    # Everything up to the first blank line is the hex grid.
+    grid_lines: List[str] = []
+    idx = 0
+    while idx < len(lines) and lines[idx] != "":
+        grid_lines.append(lines[idx])
+        idx += 1
+    if idx + 4 > len(lines):
+        raise ValueError("malformed output file (missing meta lines)")
+    entry_s, exit_s, path = lines[idx + 1], lines[idx + 2], lines[idx + 3]
+
+    height = len(grid_lines)
+    width = len(grid_lines[0]) if grid_lines else 0
+    cells: List[List[int]] = []
+    for row in grid_lines:
+        if len(row) != width:
+            raise ValueError("hex grid rows have inconsistent width")
+        cells.append([int(ch, 16) for ch in row])
+    maze = Maze(width, height, cells)
+
+    def coord(s: str) -> Coord:
+        a, b = s.split(",")
+        return (int(a), int(b))
+
+    return maze, coord(entry_s), coord(exit_s), path
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """CLI entry point. Validate an output file and print the result."""
+    args = argv if argv is not None else sys.argv[1:]
+    if len(args) != 1:
+        print("usage: python validator.py <output_file>")
+        return 2
+    try:
+        maze, entry, exit_, path = _parse_output_file(args[0])
+    except (OSError, ValueError) as err:
+        print(f"read error: {err}")
+        return 2
+
+    # An output file does not record reserved cells / perfect, so validate
+    # structure only.
+    problems = validate(maze, entry, exit_, solution=path)
+    if problems:
+        print(f"FAIL: {len(problems)} problem(s)")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+    print("OK: the maze satisfies the structural conditions")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
