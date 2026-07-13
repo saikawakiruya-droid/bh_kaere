@@ -32,7 +32,10 @@ def _parse_output_file(path: str) -> Tuple[Maze, Coord, Coord, str]:
     while idx < len(lines) and lines[idx] != "":
         grid_lines.append(lines[idx])
         idx += 1
-    if idx + 3 > len(lines):
+    # Need lines[idx+3] (the path line) to exist, i.e. len(lines) >= idx + 4.
+    # The old `idx + 3` guard was off-by-one: a file missing only the path line
+    # passed the check and then raised an uncaught IndexError below.
+    if idx + 4 > len(lines):
         raise ValueError("malformed output file (missing meta lines)")
     entry_s, exit_s, path = lines[idx + 1], lines[idx + 2], lines[idx + 3]
 
