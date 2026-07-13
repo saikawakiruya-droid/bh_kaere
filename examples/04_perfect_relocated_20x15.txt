@@ -1,0 +1,13 @@
+# 04_perfect_relocated_20x15.out example config
+# --- required keys ---
+WIDTH=20
+HEIGHT=15
+ENTRY=10,7
+EXIT=0,0
+OUTPUT_FILE=04_perfect_relocated_20x15.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42

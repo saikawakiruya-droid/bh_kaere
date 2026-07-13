@@ -1,0 +1,13 @@
+# 08_sign_42_24x14.out example config
+# --- required keys ---
+WIDTH=24
+HEIGHT=14
+ENTRY=0,0
+EXIT=23,13
+OUTPUT_FILE=08_sign_42_24x14.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42
