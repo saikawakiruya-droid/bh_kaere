@@ -46,7 +46,7 @@ def get_display_mode(name: str) -> RendererFn:
     """
     try:
         return DISPLAY_MODES[name]
-    except KeyError:
+    except KeyError as err:
         raise ConfigValueError(
             f"unknown display mode '{name}'. choices: {display_names()}"
-        )
+        ) from err

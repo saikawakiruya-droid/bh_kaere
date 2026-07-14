@@ -28,6 +28,7 @@ Standalone usage::
 from __future__ import annotations
 
 import random
+import sys
 from typing import Iterable, List, Optional, Set, Tuple
 
 from core.maze import DIRECTIONS, Maze
@@ -169,6 +170,12 @@ def braid(maze: Maze, reserved: Set[Coord], rng: random.Random,
                 if not _open_one_safe(maze, x, y, reserved, rng):
                     break
                 opened += 1
+            if maze.count_openings(x, y) < 2:
+                print(
+                    "warning: could not open corridor at "
+                    f"({x},{y}) to 2 openings",
+                    file=sys.stderr,
+                )
 
     # Phase 3: guarantee at least ``min_loops`` independent loops.
     if min_loops > 0:

@@ -53,6 +53,21 @@ DIRECTIONS: Dict[str, Tuple[int, int, int]] = {
 OPPOSITE: Dict[str, str] = {"N": "S", "S": "N", "E": "W", "W": "E"}
 
 
+def playable_corridors(width: int, height: int) -> Set[Coord]:
+    """Return the four corners and the centre of a ``width`` x ``height`` grid.
+
+    These are the "Pac-Man corridors" of a playable board (spec IV.4, v2.2):
+    the generator keeps them free of the "42" sign and turns them into open
+    corridors, and the verifier checks that they really are open. Defined here,
+    the single source of truth for maze geometry, so the generator side
+    (:mod:`a_maze_ing`) and the verifier side agree on one definition.
+    """
+    return {
+        (0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1),
+        (width // 2, height // 2),
+    }
+
+
 class Maze:
     """Lightweight container holding the maze as a grid of wall codes.
 

@@ -34,7 +34,7 @@ Standalone usage::
 
 from __future__ import annotations
 
-from typing import List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from core.maze import (
     DIRECTIONS,
@@ -45,8 +45,9 @@ from core.maze import (
     WALL_W,
     Maze,
     bfs_distances,
+    playable_corridors,
 )
-from core.metrics import count_loops
+from core.metrics import count_dead_ends, count_loops
 
 Coord = Tuple[int, int]
 
@@ -98,31 +99,44 @@ def _check_wall_consistency(maze: Maze) -> List[str]:
     return problems
 
 
-def _check_connectivity(maze: Maze, entry: Coord,
-                        reserved: Set[Coord]) -> List[str]:
+def _check_connectivity(maze: Maze, entry: Coord, reserved: Set[Coord],
+                        entry_dist: Dict[Coord, int]) -> List[str]:
     """Check that non-reserved cells are connected and reserved cells are closed.
 
     The reserved cells of the "42" sign are isolated cells closed on all four
-    sides (``0xF``), which is an exception allowed by the spec. Since an output
-    file does not record the reserved cells, ``0xF`` cells are treated as
-    reserved (allowed isolation) and excluded from the connectivity check. If
-    ``reserved`` is provided, it also checks that those are actually all closed.
+    sides (``0xF``), which is an exception allowed by the spec.
+
+    When ``reserved`` is known (non-empty, the generation-side case), only those
+    cells are treated as allowed isolation, so any *other* fully closed
+    ``0xF`` cell counts as a genuine isolation error, and it is also checked
+    that the reserved cells really are all closed.
+
+    When ``reserved`` is empty (the output-file case, where the file does not
+    record the reserved cells), every ``0xF`` cell is treated as reserved
+    (allowed isolation) and excluded from the connectivity check, preserving
+    the original behaviour.
     """
     problems: List[str] = []
     for (x, y) in reserved:
         if maze.cells[y][x] != 0xF:
             problems.append(f"reserved cell is open: ({x},{y})")
 
-    # Fully closed cells (the 42 sign) are excluded from connectivity as
-    # allowed isolation.
-    closed = {(x, y) for y in range(maze.height) for x in range(maze.width)
-              if maze.cells[y][x] == 0xF}
+    if reserved:
+        # Reserved set known: only those cells are allowed to be isolated;
+        # any other 0xF cell falls into ``free`` and, being unreachable, is
+        # reported as an isolated cell.
+        closed = set(reserved)
+    else:
+        # Output-file case: the reserved set is unknown, so every fully closed
+        # cell (the 42 sign) is treated as allowed isolation.
+        closed = {(x, y) for y in range(maze.height) for x in range(maze.width)
+                  if maze.cells[y][x] == 0xF}
     free = {(x, y) for y in range(maze.height) for x in range(maze.width)
             if (x, y) not in closed}
     if entry in closed:
         problems.append(f"entry sits on a fully closed cell: {entry}")
         return problems
-    reachable = set(bfs_distances(maze, entry).keys())
+    reachable = set(entry_dist.keys())
     isolated = free - reachable
     if isolated:
         sample = sorted(isolated)[:5]
@@ -142,14 +156,8 @@ def _check_no_open_3x3(maze: Maze) -> List[str]:
     return problems
 
 
-def _special_cells(maze: Maze) -> Set[Coord]:
-    """Return the four corners and the centre (Pac-Man corridors, spec IV.4)."""
-    w, h = maze.width, maze.height
-    return {(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1), (w // 2, h // 2)}
-
-
-def _check_playable(maze: Maze, entry: Coord,
-                    reserved: Set[Coord]) -> List[str]:
+def _check_playable(maze: Maze, reserved: Set[Coord],
+                    entry_dist: Dict[Coord, int]) -> List[str]:
     """Check the spec v2.2 "playable board" rules for ``PERFECT=False``.
 
     A default (non-perfect) maze must be usable by a Pac-Man-like game: the
@@ -162,10 +170,8 @@ def _check_playable(maze: Maze, entry: Coord,
     # Four corners and centre must be open (free) and reachable corridors.
     # "Open corridor" means at least two openings: a cell with a single opening
     # is a dead end, which the spec forbids for these cells.
-    reachable: Set[Coord] = set()
-    if maze.in_bounds(*entry):
-        reachable = set(bfs_distances(maze, entry).keys())
-    for (x, y) in sorted(_special_cells(maze)):
+    reachable: Set[Coord] = set(entry_dist.keys())
+    for (x, y) in sorted(playable_corridors(maze.width, maze.height)):
         if (x, y) in reserved or maze.cells[y][x] == 0xF:
             problems.append(
                 f"corner/centre is closed, not an open corridor: ({x},{y})"
@@ -190,13 +196,11 @@ def _check_playable(maze: Maze, entry: Coord,
             )
 
     # Dead ends should be rare (a couple are tolerated; zero is the bonus).
-    dead = [(x, y)
-            for y in range(maze.height) for x in range(maze.width)
-            if (x, y) not in reserved and maze.count_openings(x, y) == 1]
+    dead = count_dead_ends(maze, reserved)
     threshold = max(4, free_count // 25)
-    if len(dead) > threshold:
+    if dead > threshold:
         problems.append(
-            f"too many dead ends for a playable board: {len(dead)} "
+            f"too many dead ends for a playable board: {dead} "
             f"(tolerated up to {threshold})"
         )
     return problems
@@ -232,7 +236,8 @@ def _check_perfect(maze: Maze, reserved: Set[Coord]) -> List[str]:
 
 
 def _check_solution(maze: Maze, entry: Coord, exit_: Coord,
-                    solution: Optional[str]) -> List[str]:
+                    solution: Optional[str],
+                    entry_dist: Dict[Coord, int]) -> List[str]:
     """Check that the attached path is walkable and shortest."""
     if solution is None:
         return ["shortest path not set"]
@@ -246,7 +251,7 @@ def _check_solution(maze: Maze, entry: Coord, exit_: Coord,
         x, y = x + dx, y + dy
     if (x, y) != exit_:
         return [f"path does not reach the exit: end ({x},{y}) != {exit_}"]
-    dist = bfs_distances(maze, entry).get(exit_)
+    dist = entry_dist.get(exit_)
     if dist is not None and len(solution) != dist:
         return [f"path is not shortest: length {len(solution)} != shortest {dist}"]
     return []
@@ -279,14 +284,17 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
     problems += _check_endpoints(maze, entry, exit_)
     if problems:
         return problems  # if endpoints are invalid, nothing else matters
+    # Single entry-origin BFS shared by every check that needs reachability /
+    # distances from the entry (connectivity, playable corridors, solution).
+    entry_dist = bfs_distances(maze, entry)
     problems += _check_border(maze)
     problems += _check_wall_consistency(maze)
-    problems += _check_connectivity(maze, entry, reserved)
+    problems += _check_connectivity(maze, entry, reserved, entry_dist)
     problems += _check_no_open_3x3(maze)
     if perfect:
         problems += _check_perfect(maze, reserved)
     if playable:
-        problems += _check_playable(maze, entry, reserved)
+        problems += _check_playable(maze, reserved, entry_dist)
     if solution is not None:
-        problems += _check_solution(maze, entry, exit_, solution)
+        problems += _check_solution(maze, entry, exit_, solution, entry_dist)
     return problems

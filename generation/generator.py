@@ -48,7 +48,7 @@ def get_algorithm(name: str) -> GeneratorFn:
     """
     try:
         return ALGORITHMS[name]
-    except KeyError:
+    except KeyError as err:
         raise ConfigValueError(
             f"unknown algorithm '{name}'. choices: {algorithm_names()}"
-        )
+        ) from err
