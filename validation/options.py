@@ -13,17 +13,17 @@ Key           Meaning                               Default
 ``SIGN``      Only 2 and 4 are drawable             ``42``
 ============  ====================================  ==============
 
-If an optional key is invalid, :class:`~core.errors.ConfigValueError` is
-raised. This is the same exception type as required-key validation, so the
-caller can handle them uniformly.
+Optional keys are **non-fatal**: if a value is invalid, a warning is printed
+and the default is used instead, so generation continues. (Contrast with the
+required keys in :mod:`validation.config`, where a missing key aborts.)
 """
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set
 
-from core.errors import ConfigValueError
 from generation.generator import algorithm_names
 from generation.initializer import GLYPHS
 from output.display import display_names
@@ -47,24 +47,26 @@ class Options:
 
 
 def _parse_seed(value: Optional[str]) -> Optional[int]:
-    """Interpret ``SEED`` as an integer (``None`` if unset)."""
+    """Interpret ``SEED`` as an integer (``None`` if unset or invalid)."""
     if value is None:
         return None
     try:
         return int(value)
     except ValueError:
-        raise ConfigValueError(f"SEED must be an integer: '{value}'") from None
+        print(f"warning: SEED must be an integer: '{value}' "
+              f"(ignoring, using a random seed)", file=sys.stderr)
+        return None
 
 
 def _parse_choice(value: Optional[str], default: str,
                   allowed: List[str], key: str) -> str:
-    """Validate a choice key (ALGORITHM / DISPLAY)."""
+    """Validate a choice key (ALGORITHM / DISPLAY); fall back to default."""
     if value is None:
         return default
     if value not in allowed:
-        raise ConfigValueError(
-            f"unknown {key} '{value}'. choices: {allowed}"
-        )
+        print(f"warning: unknown {key} '{value}'. choices: {allowed} "
+              f"(using default '{default}')", file=sys.stderr)
+        return default
     return value
 
 
@@ -74,10 +76,10 @@ def _parse_sign(value: Optional[str]) -> str:
         return DEFAULT_SIGN
     unknown = sorted({ch for ch in value if ch not in GLYPHS})
     if unknown:
-        raise ConfigValueError(
-            f"SIGN contains characters that cannot be drawn: {unknown} "
-            f"(available: {sorted(GLYPHS)})"
-        )
+        print(f"warning: SIGN contains characters that cannot be drawn: "
+              f"{unknown} (available: {sorted(GLYPHS)}; "
+              f"using default '{DEFAULT_SIGN}')", file=sys.stderr)
+        return DEFAULT_SIGN
     return value
 
 
@@ -90,10 +92,8 @@ def parse_options(raw: Dict[str, str]) -> Options:
             :mod:`validation.config`).
 
     Returns:
-        The validated :class:`Options`.
-
-    Raises:
-        ConfigValueError: If any optional key has an invalid value.
+        The validated :class:`Options`. Invalid optional values are replaced
+        with their defaults (after a warning), so this never raises.
     """
     return Options(
         seed=_parse_seed(raw.get("SEED")),
