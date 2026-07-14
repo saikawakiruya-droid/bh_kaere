@@ -29,7 +29,7 @@ import os
 import subprocess
 import sys
 from contextlib import redirect_stdout
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 # Add the parent of examples/ (the project root) to the import path.
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
