@@ -1,0 +1,14 @@
+# intent (意図): 角同士・完全迷路の基本形（入口出口間の経路がちょうど1本）
+# 02_corners_perfect_20x15.out example config
+# --- required keys ---
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=02_corners_perfect_20x15.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42

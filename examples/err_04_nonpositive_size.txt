@@ -1,0 +1,8 @@
+# intent (意図): WIDTH が 1 未満
+# expected (期待する挙動): config error: WIDTH must be 1 or greater
+WIDTH=0
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True

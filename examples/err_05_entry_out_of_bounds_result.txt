@@ -1,0 +1,16 @@
+# intent (意図): ENTRY が盤面範囲外
+# expected (期待する挙動): config error: ENTRY (...) is outside the maze bounds
+# exit code: 1 (0=success, 1=handled error, 2=usage)
+
+== Config file (invalid on purpose) ==
+# intent (意図): ENTRY が盤面範囲外
+# expected (期待する挙動): config error: ENTRY (...) is outside the maze bounds
+WIDTH=20
+HEIGHT=15
+ENTRY=99,99
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True
+
+== Program output (python3 a_maze_ing.py <cfg>) ==
+config error: ENTRY (99,99) is outside the maze bounds 20x15

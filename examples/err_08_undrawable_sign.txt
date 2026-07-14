@@ -1,0 +1,9 @@
+# intent (意図): SIGN に描画不能文字（使えるのは 2 と 4 のみ）
+# expected (期待する挙動): config error: SIGN contains characters that cannot be drawn
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True
+SIGN=7

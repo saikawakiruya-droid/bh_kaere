@@ -1,0 +1,16 @@
+# intent (意図): WIDTH が 1 未満
+# expected (期待する挙動): config error: WIDTH must be 1 or greater
+# exit code: 1 (0=success, 1=handled error, 2=usage)
+
+== Config file (invalid on purpose) ==
+# intent (意図): WIDTH が 1 未満
+# expected (期待する挙動): config error: WIDTH must be 1 or greater
+WIDTH=0
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True
+
+== Program output (python3 a_maze_ing.py <cfg>) ==
+config error: WIDTH must be 1 or greater: 0

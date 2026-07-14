@@ -1,0 +1,8 @@
+# intent (意図): KEY=VALUE 形式でない行（'=' がない）
+# expected (期待する挙動): config error: not in 'KEY=VALUE' form
+WIDTH=20
+HEIGHT 15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True

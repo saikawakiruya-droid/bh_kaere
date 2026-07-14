@@ -1,0 +1,14 @@
+# intent (意図): 左辺中央→右辺中央。辺の中間を入口出口にしたプレイアブル盤面
+# 04_left_right_edge_mid_playable_25x15.out example config
+# --- required keys ---
+WIDTH=25
+HEIGHT=15
+ENTRY=0,7
+EXIT=24,7
+OUTPUT_FILE=04_left_right_edge_mid_playable_25x15.out
+PERFECT=False
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42

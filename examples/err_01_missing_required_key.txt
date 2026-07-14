@@ -1,0 +1,7 @@
+# intent (意図): 必須キー欠落（PERFECT がない）
+# expected (期待する挙動): config error: missing required keys
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt

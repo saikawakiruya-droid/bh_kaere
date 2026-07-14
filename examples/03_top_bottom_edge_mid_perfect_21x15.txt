@@ -1,0 +1,14 @@
+# intent (意図): 上辺中央→下辺中央。入口出口を辺の中間に置いた完全迷路（角以外の辺セルが扱えること）
+# 03_top_bottom_edge_mid_perfect_21x15.out example config
+# --- required keys ---
+WIDTH=21
+HEIGHT=15
+ENTRY=10,0
+EXIT=10,14
+OUTPUT_FILE=03_top_bottom_edge_mid_perfect_21x15.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42

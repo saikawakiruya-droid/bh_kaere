@@ -1,0 +1,9 @@
+# intent (意図): SEED が整数でない
+# expected (期待する挙動): config error: SEED must be an integer
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=out.txt
+PERFECT=True
+SEED=abc
