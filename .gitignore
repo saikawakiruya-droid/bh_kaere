@@ -27,6 +27,12 @@ o.txt
 np_out.txt
 small_out.txt
 
+# Course-supplied validator (graders provide their own; not part of submission)
+maze_analyzer.py
+
+# MLX library archive (display via MLX is future work; not used yet)
+mlx-2.2.tgz
+
 # Editor / OS noise
 .vscode/
 .idea/

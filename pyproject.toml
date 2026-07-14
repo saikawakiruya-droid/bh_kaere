@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Reusable maze generation module (A-Maze-ing)"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "42 student" }]
+authors = [{ name = "naarai" }, { name = "ksadayas" }]
 keywords = ["maze", "generator", "backtracker", "labyrinth"]
 classifiers = [
     "Programming Language :: Python :: 3",
