@@ -1,0 +1,30 @@
+# attack (攻撃意図): 「42」がちょうど収まる最小板 7x5。
+# observed (観測結果): frame には収まるが、盤全体をサインが埋めるため自由セルの連結が保てず置ける位置が無い。
+#   SignOverlapError を捕捉して「cannot place / omitting」で優雅に省略し、有効な完全迷路を生成。cli=OK。
+#   境界(frame合格だが配置不能)を SignTooBig と区別して正しく扱えている。
+# verdict (判定): HELD（サイン OMITTED、迷路は正常）
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_05_sign_fit_7x5.txt < /dev/null
+warning (cannot place): no position can place sign '42' (it would overlap the entry/exit, disconnect the maze, or strangle a corridor cell) / omitting sign '42'
+wrote output file: adv_05.out
++---+---+---+---+---+---+---+
+| E   *   * | *   *   *   * |
++---+---+   +   +---+---+   +
+...
++---+---+---+---+---+---+---+
+EXIT=0
+
+=== 出力ファイル adv_05.out ===
+D539553
+97C693A
+83956AA
+AAC3BAA
+EC546C6
+
+0,0
+6,4
+EESENEEESSSS
+
+=== 独立検証 verification.cli ===
+OK   (cli_exit=0)

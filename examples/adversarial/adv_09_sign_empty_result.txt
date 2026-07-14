@@ -1,0 +1,16 @@
+# attack (攻撃意図): SIGN= を空にする。空文字列サインで幅計算((n-1)*gap=-gap)や配置が壊れないか。
+# observed (観測結果): クラッシュせず。空サインは「配置成功(空集合)」扱いとなり、
+#   警告メッセージも一切出さずにサインが無い迷路を生成（0xF 予約セル 0 個）。cli=OK。
+#   例外・負幅による異常は起きないが、「SIGN を空にすると何も言わず 42 が消える」点は
+#   観測性(explainability)の弱点。省略時に一言警告があると親切。
+# verdict (判定): HELD（クラッシュ無し）／ただしサインは無言で OMITTED（観測性の指摘）
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_09_sign_empty.txt < /dev/null
+(stderr: 空 / stdout: wrote output file: adv_09.out … 20x15 完全迷路、サイン無し)
+EXIT=0
+
+grid 中の 0xF(全閉)セル数 = 0  （＝サイン予約セルは存在しない）
+
+=== 独立検証 verification.cli ===
+OK   (cli_exit=0)

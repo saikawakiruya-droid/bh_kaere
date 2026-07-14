@@ -1,0 +1,17 @@
+# attack (攻撃意図): 端点を右上(19,0)/左下(0,14)の非標準隅に置き PERFECT=False。端点＝隅通路要件の干渉。
+# observed (観測結果): 警告無し。端点が隅でも2開口の通路化・33本のループ・デッドエンド0を達成。
+#   cli=OK、maze_analyzer=Pac-Man-USABLE(bonus)。端点と隅通路要件は干渉しない。
+# verdict (判定): HELD
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_12_swapped_corners_playable.txt < /dev/null
+(stderr 空) 20x15 プレイアブル盤、サイン有り
+
+=== 出力ファイル メタ ===
+19,0
+0,14
+WWWWWWWSESWWWWWSSSSWSEESSSSEESSSWNWSWWWWWWWWW
+
+=== 独立検証 ===
+verification.cli : OK   (cli_exit=0)
+maze_analyzer    : Pac-Man-USABLE: 33 independent routes; no real dead-end -> bonus-grade

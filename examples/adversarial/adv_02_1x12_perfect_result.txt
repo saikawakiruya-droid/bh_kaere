@@ -1,0 +1,43 @@
+# attack (攻撃意図): 幅1の極端に細長い縦板 1x12 (PERFECT=True)。
+# observed (観測結果): サインは frame に収まらず省略の警告。1セル幅の一本道を正しく生成し、
+#   独立検証(verification.cli)=OK、maze_analyzer=PERFECT maze と判定。破綻なし。
+#   なお maze_analyzer は「2 enclosed by the '42'」と表示するが、本ケースにサインは無く、
+#   これは analyzer 側の端点ヒューリスティックの表示揺れであって本体の不具合ではない。
+# verdict (判定): HELD（優雅に処理／サイン省略 OMITTED 併発）
+# exit code: 0 / cli_exit: 0 / analyzer_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_02_1x12_perfect.txt < /dev/null
+warning (does not fit): sign '42' does not fit the maze frame 1x12 / omitting sign '42'
+wrote output file: adv_02.out
++---+
+| E |
++   +
+| * |
+... (中略, 1セル幅の縦一本道) ...
+| X |
++---+
+EXIT=0
+
+=== 出力ファイル adv_02.out (16進グリッド + メタ) ===
+B
+A
+A
+A
+A
+A
+A
+A
+A
+A
+A
+E
+
+0,0
+0,11
+SSSSSSSSSSS
+
+=== 独立検証 verification.cli ===
+OK: the maze satisfies the structural conditions   (cli_exit=0)
+
+=== maze_analyzer.py ===
+Verdict: PERFECT maze: a single path, no loop -> matches PERFECT=True   (analyzer_exit=0)

@@ -1,0 +1,9 @@
+# attack (攻撃意図): 最小退化サイズ 1x1。ENTRY と EXIT を別座標に置けない板挟みを突く。
+# observed (観測結果): クラッシュせず「ENTRY and EXIT must differ」の config error を返し exit 1。
+#   1x1 では ENTRY!=EXIT を満たす有効な設定が原理的に存在しないため、実質「1x1 は生成不能」を明快に拒否している。
+# verdict (判定): HELD（優雅に拒否）
+# exit code: 1
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_01_1x1.txt < /dev/null
+config error: ENTRY and EXIT must differ: (0, 0)
+EXIT=1

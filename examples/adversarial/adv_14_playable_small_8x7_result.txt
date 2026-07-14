@@ -1,0 +1,29 @@
+# attack (攻撃意図): 小盤面 8x7 を PERFECT=False。狭い盤で隅+中心通路化・ループ2本・サイン同居のギリギリ。
+# observed (観測結果): サインはプレイアブル隅通路制約下で置ける位置が無く省略(cannot place)。
+#   だが盤自体は 8本の独立ループ・デッドエンド0の bonus 級プレイアブル盤を達成。
+#   事後検証の失敗警告なし、cli=OK、maze_analyzer=Pac-Man-USABLE(bonus)。
+#   狭い盤でも「サインは諦め、プレイアブル性は担保」という優先順位で優雅に成立。
+# verdict (判定): HELD（プレイアブル成立、サインは OMITTED）
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_14_playable_small_8x7.txt < /dev/null
+warning (cannot place): no position can place sign '42' ... / omitting sign '42'
+wrote output file: adv_14.out
+(8x7 プレイアブル盤、サイン無し、ループ多数)
+
+=== 出力ファイル adv_14.out ===
+95395513
+83C693C2
+A853AC3A
+C29283AA
+96846C6A
+8545113A
+C55546C6
+
+0,0
+7,6
+EESENEEEESSSSSS
+
+=== 独立検証 ===
+verification.cli : OK   (cli_exit=0)
+maze_analyzer    : Pac-Man-USABLE: 8 independent routes; no real dead-end -> bonus-grade

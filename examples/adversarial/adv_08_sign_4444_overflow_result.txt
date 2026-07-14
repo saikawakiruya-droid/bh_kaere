@@ -1,0 +1,14 @@
+# attack (攻撃意図): SIGN=4444（幅15〜18要）を幅12板に。幅を大きく超過するサイン。
+# observed (観測結果): SignTooBig を捕捉し「does not fit / omitting」で省略、完全迷路を生成。cli=OK。
+#   幅超過・例外・無限ループ無し。繰り返しグリフでも frame 判定が正しく機能。
+# verdict (判定): HELD（サイン OMITTED、迷路は正常）
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_08_sign_4444_overflow.txt < /dev/null
+warning (does not fit): sign '4444' does not fit the maze frame 12x8 / omitting sign '4444'
+wrote output file: adv_08.out
+(12x8 完全迷路。サイン無し)
+EXIT=0
+
+=== 独立検証 verification.cli ===
+OK   (cli_exit=0)

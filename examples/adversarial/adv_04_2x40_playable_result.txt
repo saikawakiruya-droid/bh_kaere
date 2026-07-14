@@ -1,0 +1,24 @@
+# attack (攻撃意図): 幅2・高さ40の極端に細長い縦板を PERFECT=False で要求。
+# observed (観測結果): サインは省略。幅2でも隅は2開口を作れ、11本の独立ループ・デッドエンド0の
+#   完全ブレイド盤を生成。事後検証の警告なし、verification.cli=OK、maze_analyzer=Pac-Man-USABLE(bonus)。
+#   幅1(adv_03)では破綻したがギリギリ幅2では成立することを確認。
+# verdict (判定): HELD（優雅に処理／サイン OMITTED 併発）
+# exit code: 0 / cli_exit: 0 / analyzer: Pac-Man-USABLE(bonus)
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_04_2x40_playable.txt < /dev/null
+warning (does not fit): sign '42' does not fit the maze frame 2x40 / omitting sign '42'
+wrote output file: adv_04.out
+(2セル幅・40行の細長プレイアブル盤。ループ多数)
+
+=== 出力ファイル adv_04.out (先頭/末尾抜粋) ===
+93
+82
+AA
+...
+0,0
+1,39
+SSSSSSSSSSSSSSESSSSSSSSSSSSSSSSWSESSSWSESSWSES
+
+=== 独立検証 ===
+verification.cli : OK   (cli_exit=0)
+maze_analyzer    : Pac-Man-USABLE: 11 independent routes; no real dead-end -> bonus-grade

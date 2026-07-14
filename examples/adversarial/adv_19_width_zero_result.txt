@@ -1,0 +1,9 @@
+# attack (攻撃意図): 近接エラー入力。WIDTH=0 は有効最小値1の1つ手前の無効値。非正サイズ拒否の境界を突く。
+# observed (観測結果): WIDTH=0 を「WIDTH must be 1 or greater」で拒否。exit 1。
+#   Maze(0,...) の生成やゼロ割・空配列に到達する前に、設定検証段階で弾かれる。境界(1未満)判定は正しい。
+# verdict (判定): HELD（優雅に拒否）
+# exit code: 1
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_19_width_zero.txt < /dev/null
+config error: WIDTH must be 1 or greater: 0
+EXIT=1

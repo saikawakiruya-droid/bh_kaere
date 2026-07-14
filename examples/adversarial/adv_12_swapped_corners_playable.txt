@@ -1,0 +1,10 @@
+# attack (攻撃意図): 端点を標準の(0,0)/(W-1,H-1)以外の隅、右上(19,0)と左下(0,14)に置き、かつ
+#   PERFECT=False。端点がプレイアブルの「隅通路(2開口)」要件と重なるケースを突く。
+# hypothesis (壊れると予想する点): 端点＝隅のとき2開口化と最短経路/検証が干渉して失敗する可能性。
+WIDTH=20
+HEIGHT=15
+ENTRY=19,0
+EXIT=0,14
+OUTPUT_FILE=adv_12.out
+PERFECT=False
+SEED=3

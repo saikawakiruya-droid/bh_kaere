@@ -1,0 +1,15 @@
+# attack (攻撃意図): SEED=-999999 の負値シード。
+# observed (観測結果): 負値を受理し正常に生成。例外無し、cli=OK。負値も有効な乱数種として扱われる。
+# verdict (判定): HELD
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_15_seed_negative.txt < /dev/null
+(stderr 空) wrote output file: adv_15.out ; 20x15 完全迷路
+
+=== 出力ファイル メタ ===
+0,0
+19,14
+EEESWWWSSENESSESSESWWSWNWSSSENEEEESESWSESENNESSSENENEESSENNNWWNEEESEEESSWSEEE
+
+=== 独立検証 verification.cli ===
+OK   (cli_exit=0)

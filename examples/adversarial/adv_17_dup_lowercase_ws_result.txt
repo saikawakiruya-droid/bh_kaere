@@ -1,0 +1,19 @@
+# attack (攻撃意図): 小文字キー・余分な空白(=前後/値内/"0 , 0")・重複キー(WIDTHを10→20で二重定義)。
+# observed (観測結果): キーは upper 正規化、値は strip、座標内の空白("0 , 0")も int() が吸収。
+#   重複 WIDTH は「warning: line 9: duplicate key WIDTH (using the later value)」で後勝ち採用(=20)。
+#   結果 20x15 完全迷路(grid行20字)を生成、cli=OK。書式の揺れに強い。
+# verdict (判定): HELD（警告付きで優雅に受理）
+# exit code: 0 / cli_exit: 0
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_17_dup_lowercase_ws.txt < /dev/null
+warning: line 9: duplicate key WIDTH (using the later value)
+wrote output file: adv_17.out
+(20x15 完全迷路。width は後勝ちで 20)
+
+=== 出力ファイル メタ ===
+0,0
+9,14
+EESENEEESENEEEEESEESSENEEENNESSSSWWWSWNWSSSENESSSWSESSESSWWWNNWSSWNNNWSSWSW
+
+=== 独立検証 verification.cli ===
+OK   (cli_exit=0)

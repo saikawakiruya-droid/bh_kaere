@@ -1,0 +1,11 @@
+# attack (攻撃意図): SEED=-999999 の負値シード。random.Random に負値を渡して例外や非決定性が
+#   起きないか、負値も設定として受理されるかを突く。
+# hypothesis (壊れると予想する点): int 変換は通るが、負値を弾く独自バリデーションがあれば拒否、
+#   無ければそのまま乱数種として使用。
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=adv_15.out
+PERFECT=True
+SEED=-999999

@@ -1,0 +1,12 @@
+# attack (攻撃意図): SIGN= を空にする。空文字列のサインでビットマップ生成やギャップ幅計算
+#   ((num_digits-1)*gap = -gap) が壊れないかを突く。
+# hypothesis (壊れると予想する点): 空 text で sign_width が負になり、_placements の range が異常、
+#   もしくは空集合を「配置成功」とみなして黙ってサイン無しになる（挙動の説明性の問題）。
+WIDTH=20
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=adv_09.out
+PERFECT=True
+SEED=42
+SIGN=

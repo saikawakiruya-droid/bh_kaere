@@ -1,0 +1,9 @@
+# attack (攻撃意図): 20x15 で EXIT=20,14 (x=20=幅、境界W-1の直後の範囲外) を突く。
+# observed (観測結果): 範囲チェックは 0<=x<width で正しく、x=20 を「outside the maze bounds」で拒否。exit 1。
+#   <= の取り違え(オフバイワン)は無い。
+# verdict (判定): HELD（優雅に拒否）
+# exit code: 1
+
+$ .venv/bin/python a_maze_ing.py examples/adversarial/adv_13_coord_offbyone.txt < /dev/null
+config error: EXIT (20,14) is outside the maze bounds 20x15
+EXIT=1

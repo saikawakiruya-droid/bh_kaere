@@ -1,0 +1,11 @@
+# attack (攻撃意図): 「42」の自然サイズは幅7×高さ5。frame にちょうど収まる最小板 7x5 (PERFECT=True)。
+#   サインが盤面を埋め尽くし、残り自由セルの連結性が崩れる/入口出口が置けない境界を突く。
+# hypothesis (壊れると予想する点): frame には収まる(SignTooBig回避)が、置ける位置が無く SignOverlap で
+#   省略になる、あるいは無理に置いて連結性検証が失敗する。
+WIDTH=7
+HEIGHT=5
+ENTRY=0,0
+EXIT=6,4
+OUTPUT_FILE=adv_05.out
+PERFECT=True
+SEED=42

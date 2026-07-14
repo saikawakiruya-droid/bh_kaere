@@ -1,0 +1,13 @@
+﻿# attack (攻撃意図): 先頭 BOM + コメント/空行混在 + 未知キー(FOO)を入れ、
+# hypothesis (壊れると予想する点): BOM で先頭キー WIDTH が読めず必須キー欠損エラー、未知キーで拒否する可能性。
+
+WIDTH=20
+
+# comment line
+HEIGHT=15
+ENTRY=0,0
+EXIT=19,14
+OUTPUT_FILE=adv_18.out
+PERFECT=True
+FOO=bar
+SEED=42
