@@ -59,6 +59,9 @@ def _find_connector(maze: Maze, reserved: Set[Coord],
                 candidates.append(((x, y), direction, n))
     if not candidates:
         return None
+    # ``visited`` is a set, so its iteration order is not deterministic across
+    # runs; sort the candidates first so ``rng.choice`` picks reproducibly.
+    candidates.sort()
     return rng.choice(candidates)
 
 

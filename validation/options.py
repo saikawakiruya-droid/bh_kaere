@@ -10,7 +10,7 @@ Key           Meaning                               Default
 ``SEED``      Random seed (reproducibility)         none (random each run)
 ``ALGORITHM`` Generation algorithm name             ``backtracker``
 ``DISPLAY``   Display mode name                     ``ascii``
-``SIGN``      String to embed                       ``42``
+``SIGN``      Only 2 and 4 are drawable             ``42``
 ============  ====================================  ==============
 
 If an optional key is invalid, :class:`~core.errors.ConfigValueError` is
@@ -21,7 +21,7 @@ caller can handle them uniformly.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from core.errors import ConfigValueError
 from generation.generator import algorithm_names
@@ -53,11 +53,11 @@ def _parse_seed(value: Optional[str]) -> Optional[int]:
     try:
         return int(value)
     except ValueError:
-        raise ConfigValueError(f"SEED must be an integer: '{value}'")
+        raise ConfigValueError(f"SEED must be an integer: '{value}'") from None
 
 
 def _parse_choice(value: Optional[str], default: str,
-                  allowed: list[str], key: str) -> str:
+                  allowed: List[str], key: str) -> str:
     """Validate a choice key (ALGORITHM / DISPLAY)."""
     if value is None:
         return default

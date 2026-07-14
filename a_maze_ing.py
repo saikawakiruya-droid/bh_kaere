@@ -20,7 +20,7 @@ from typing import List, Optional, Set, Tuple
 
 from braiding.braiding import braid
 from core.errors import MazeError
-from core.maze import Maze, path_to_cells, solve
+from core.maze import Maze, path_to_cells, playable_corridors, solve
 from generation.generator import get_algorithm
 from generation.initializer import initialize_maze
 from output.ascii_display import WALL_COLORS
@@ -37,11 +37,13 @@ PLAYABLE_MIN_LOOPS = 2
 
 
 def _corridor_cells(width: int, height: int) -> Set[Coord]:
-    """Return the four corners and the centre (playable-board corridors)."""
-    return {
-        (0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1),
-        (width // 2, height // 2),
-    }
+    """Backward-compatible alias for :func:`core.maze.playable_corridors`.
+
+    The corridor definition now lives in :mod:`core.maze` as the single source
+    of truth shared with :mod:`verification.verifier`; this thin delegator is
+    kept only so existing callers of ``_corridor_cells`` keep working.
+    """
+    return playable_corridors(width, height)
 
 
 def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
@@ -61,7 +63,7 @@ def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
     """
     rng = random.Random(config.options.seed)
     corridors = (None if config.perfect
-                 else _corridor_cells(config.width, config.height))
+                 else playable_corridors(config.width, config.height))
     _, reserved = initialize_maze(
         config.width, config.height,
         entry=config.entry, exit_=config.exit,
