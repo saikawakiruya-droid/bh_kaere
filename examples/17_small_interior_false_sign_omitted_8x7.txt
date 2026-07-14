@@ -1,0 +1,14 @@
+# intent (意図): ユーザー提供の確認例。16と同一設定で PERFECT=False。四隅＋中央を通路化する必要があり「42」を置く余地が無く省略される（非致命的、盤面はプレイアブルとして有効）
+# 17_small_interior_false_sign_omitted_8x7.out example config
+# --- required keys ---
+WIDTH=8
+HEIGHT=7
+ENTRY=6,4
+EXIT=5,4
+OUTPUT_FILE=17_small_interior_false_sign_omitted_8x7.out
+PERFECT=False
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42

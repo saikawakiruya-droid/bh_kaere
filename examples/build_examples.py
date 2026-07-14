@@ -262,6 +262,22 @@ def main() -> None:
                     "14と直接見比べる",
              width=20, height=15, entry=(0, 0), exit_=(19, 14),
              perfect=False, seed=42, sign="42"),
+        # User-provided pair on a tiny board with interior, adjacent endpoints:
+        # the same config yields a placed sign for PERFECT=True (no corridor
+        # constraint) but an omitted sign for PERFECT=False (corners + centre
+        # must stay corridors, leaving no room for the "42").
+        dict(name="16_small_interior_true_sign_placed_8x7",
+             intent="ユーザー提供の確認例。8x7・内部の隣接する入口出口。"
+                    "PERFECT=True では中央制約が無く「42」が配置される。"
+                    "17と直接見比べる（PERFECTだけ違う対）",
+             width=8, height=7, entry=(6, 4), exit_=(5, 4),
+             perfect=True, seed=42, sign="42"),
+        dict(name="17_small_interior_false_sign_omitted_8x7",
+             intent="ユーザー提供の確認例。16と同一設定で PERFECT=False。"
+                    "四隅＋中央を通路化する必要があり「42」を置く余地が無く"
+                    "省略される（非致命的、盤面はプレイアブルとして有効）",
+             width=8, height=7, entry=(6, 4), exit_=(5, 4),
+             perfect=False, seed=42, sign="42"),
     ]
     for s in success:
         build(**s)

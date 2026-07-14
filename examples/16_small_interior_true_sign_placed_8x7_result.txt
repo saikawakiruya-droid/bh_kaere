@@ -1,0 +1,34 @@
+# intent (意図): ユーザー提供の確認例。8x7・内部の隣接する入口出口。PERFECT=True では中央制約が無く「42」が配置される。17と直接見比べる（PERFECTだけ違う対）
+# 16_small_interior_true_sign_placed_8x7: 8x7 PERFECT=True entry=(6, 4) exit=(5, 4) seed=42 sign=42 (perfect maze)
+# reserved cells (42) = 18 (sign placed)
+# validation: OK (no problems)
+
+== Output file (spec IV.5: hex grid, blank line, entry / exit / shortest path) ==
+D5395553
+F96AFFFA
+FC5057FA
+FFFAFFFA
+93FAFD56
+AEFAFFFB
+C5545556
+
+6,4
+5,4
+W
+
+== ASCII rendering (E=entry, X=exit, *=one shortest path, #=42) ==
++---+---+---+---+---+---+---+---+
+|           |                   |
++---+---+   +   +---+---+---+   +
+|###|       |   |###|###|###|   |
++---+   +---+   +---+---+---+   +
+|###|                   |###|   |
++---+---+---+   +---+---+---+   +
+|###|###|###|   |###|###|###|   |
++---+---+---+   +---+---+---+   +
+|       |###|   |###| X   E     |
++   +   +---+   +---+---+---+---+
+|   |   |###|   |###|###|###|   |
++   +---+---+   +---+---+---+   +
+|                               |
++---+---+---+---+---+---+---+---+

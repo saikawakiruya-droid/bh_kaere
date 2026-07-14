@@ -1,0 +1,14 @@
+# intent (意図): ユーザー提供の確認例。8x7・内部の隣接する入口出口。PERFECT=True では中央制約が無く「42」が配置される。17と直接見比べる（PERFECTだけ違う対）
+# 16_small_interior_true_sign_placed_8x7.out example config
+# --- required keys ---
+WIDTH=8
+HEIGHT=7
+ENTRY=6,4
+EXIT=5,4
+OUTPUT_FILE=16_small_interior_true_sign_placed_8x7.out
+PERFECT=True
+# --- optional keys ---
+SEED=42
+ALGORITHM=backtracker
+DISPLAY=ascii
+SIGN=42
