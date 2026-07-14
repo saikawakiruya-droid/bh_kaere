@@ -238,6 +238,20 @@ def parse_config(path: str) -> Config:
     assert (width is not None and height is not None and entry is not None
             and exit_ is not None and perfect is not None)
 
+    # A playable (PERFECT=False) board needs the four corners and centre to be
+    # open corridors and at least two independent loops. Both are geometrically
+    # impossible unless (WIDTH-1)*(HEIGHT-1) >= 2 -- i.e. a 1-wide frame (WIDTH
+    # or HEIGHT == 1) or a 2x2 frame can never be playable, whatever the seed.
+    # Rather than generate a board that always fails post-generation checks,
+    # warn and fall back to a PERFECT maze, which any frame can satisfy.
+    if not perfect and (width - 1) * (height - 1) < 2:
+        print(
+            f"warning: {width}x{height} is too small for a playable board "
+            f"((WIDTH-1)*(HEIGHT-1) < 2); generating a PERFECT maze instead",
+            file=sys.stderr,
+        )
+        perfect = True
+
     return Config(
         width=width,
         height=height,
