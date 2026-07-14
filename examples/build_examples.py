@@ -249,6 +249,19 @@ def main() -> None:
              intent="小さい盤面で入口出口が全配置を塞ぎ「42」が省略されるケース"
                     "（省略は致命的でなく迷路自体は生成される）",
              width=8, height=7, entry=(0, 1), exit_=(7, 6), perfect=True),
+        # Matched pair: identical config, only PERFECT differs (14 vs 15) so the
+        # perfect maze and the playable board can be compared on the same board.
+        dict(name="14_same_config_perfect_true_20x15",
+             intent="PERFECTだけをTrueにした対（他設定は15と完全に同一）。"
+                    "完全迷路＝入口出口間の経路がちょうど1本。15と直接見比べる",
+             width=20, height=15, entry=(0, 0), exit_=(19, 14),
+             perfect=True, seed=42, sign="42"),
+        dict(name="15_same_config_perfect_false_20x15",
+             intent="PERFECTだけをFalseにした対（他設定は14と完全に同一）。"
+                    "プレイアブル盤面＝四隅と中央が通路・独立ループ2本以上。"
+                    "14と直接見比べる",
+             width=20, height=15, entry=(0, 0), exit_=(19, 14),
+             perfect=False, seed=42, sign="42"),
     ]
     for s in success:
         build(**s)
