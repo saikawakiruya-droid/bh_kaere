@@ -93,7 +93,9 @@ def _parse_positive_int(raw: Dict[str, str], key: str) -> int:
     try:
         num = int(value)
     except ValueError:
-        raise ConfigValueError(f"{key} must be an integer: '{value}'")
+        raise ConfigValueError(
+            f"{key} must be an integer: '{value}'"
+        ) from None
     if num <= 0:
         raise ConfigValueError(f"{key} must be 1 or greater: {num}")
     return num
@@ -113,7 +115,7 @@ def _parse_coord(raw: Dict[str, str], key: str,
     except ValueError:
         raise ConfigValueError(
             f"{key} coordinates must be integers: '{value}'"
-        )
+        ) from None
     if not (0 <= x < width and 0 <= y < height):
         raise ConfigValueError(
             f"{key} ({x},{y}) is outside the maze bounds {width}x{height}"
@@ -130,7 +132,7 @@ def _parse_bool(raw: Dict[str, str], key: str) -> bool:
         return False
     raise ConfigValueError(
         f"{key} must be True / False: '{raw[key]}'"
-    )
+    ) from None
 
 
 def parse_config(path: str) -> Config:
