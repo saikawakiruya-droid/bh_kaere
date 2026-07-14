@@ -13,6 +13,7 @@ from core.errors import (
     ConfigParseError,
     ConfigValueError,
 )
+from validation.options import DEFAULT_ALGORITHM, DEFAULT_DISPLAY, DEFAULT_SIGN
 from validation.config import parse_config
 
 VALID = """
@@ -60,14 +61,34 @@ def test_defaults_for_optional(tmp_path: Path) -> None:
 
 def test_missing_required_key(tmp_path: Path) -> None:
     text = "WIDTH=10\nHEIGHT=10\nENTRY=0,0\nEXIT=9,9\nPERFECT=True\n"
-    with pytest.raises(ConfigKeyError):
+    with pytest.raises(ConfigError) as excinfo:
         parse_config(_write(tmp_path, text))
+    # OUTPUT_FILE is missing and reported by name.
+    assert "OUTPUT_FILE" in str(excinfo.value)
 
 
-def test_syntax_error(tmp_path: Path) -> None:
-    text = "WIDTH=10\nHEIGHT 10\n"  # no '='
-    with pytest.raises(ConfigParseError):
+def test_malformed_line_is_reported_immediately_as_error(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # A non-'KEY=VALUE' line is a parse error: reported immediately as an
+    # 'error' (not a warning), skipped, and fatal once reading completes.
+    text = VALID + "this is not a valid line\n"
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
+    err = capsys.readouterr().err
+    assert "error:" in err and "not in 'KEY=VALUE' form" in err
+
+
+def test_malformed_required_line_reported_as_error_and_missing(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # A malformed line for a required key is caught twice, as intended: an
+    # immediate parse error, and — since the key never entered the dict — a
+    # 'missing required key' entry in the aggregated report.
+    text = "WIDTH=10\nHEIGHT 10\nENTRY=0,0\nEXIT=9,9\nOUTPUT_FILE=m.txt\nPERFECT=True\n"
+    with pytest.raises(ConfigError) as excinfo:
+        parse_config(_write(tmp_path, text))
+    err = capsys.readouterr().err
+    assert "error:" in err and "not in 'KEY=VALUE' form" in err
+    assert "missing required key: HEIGHT" in str(excinfo.value)
 
 
 def test_file_not_found() -> None:
@@ -77,56 +98,100 @@ def test_file_not_found() -> None:
 
 def test_non_integer_width(tmp_path: Path) -> None:
     text = VALID.replace("WIDTH=20", "WIDTH=abc")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
 def test_non_positive_width(tmp_path: Path) -> None:
     text = VALID.replace("WIDTH=20", "WIDTH=0")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
 def test_entry_out_of_bounds(tmp_path: Path) -> None:
     text = VALID.replace("ENTRY=0,0", "ENTRY=99,99")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
 def test_entry_equals_exit(tmp_path: Path) -> None:
     text = VALID.replace("EXIT=19,14", "EXIT=0,0")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
 def test_bad_coord_format(tmp_path: Path) -> None:
     text = VALID.replace("ENTRY=0,0", "ENTRY=0-0")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
 def test_bad_perfect_value(tmp_path: Path) -> None:
     text = VALID.replace("PERFECT=True", "PERFECT=maybe")
-    with pytest.raises(ConfigValueError):
+    with pytest.raises(ConfigError):
         parse_config(_write(tmp_path, text))
 
 
-def test_unknown_algorithm(tmp_path: Path) -> None:
+def test_unknown_algorithm_warns_and_uses_default(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     text = VALID.replace("ALGORITHM=backtracker", "ALGORITHM=prim")
-    with pytest.raises(ConfigValueError):
-        parse_config(_write(tmp_path, text))
+    cfg = parse_config(_write(tmp_path, text))
+    assert cfg.options.algorithm == DEFAULT_ALGORITHM
+    err = capsys.readouterr().err
+    assert "ALGORITHM" in err and "prim" in err
 
 
-def test_unknown_display(tmp_path: Path) -> None:
+def test_unknown_display_warns_and_uses_default(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     text = VALID.replace("DISPLAY=ascii", "DISPLAY=opengl")
-    with pytest.raises(ConfigValueError):
-        parse_config(_write(tmp_path, text))
+    cfg = parse_config(_write(tmp_path, text))
+    assert cfg.options.display == DEFAULT_DISPLAY
+    err = capsys.readouterr().err
+    assert "DISPLAY" in err and "opengl" in err
 
 
-def test_bad_seed(tmp_path: Path) -> None:
+def test_bad_seed_warns_and_uses_random(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     text = VALID.replace("SEED=42", "SEED=xx")
-    with pytest.raises(ConfigValueError):
+    cfg = parse_config(_write(tmp_path, text))
+    assert cfg.options.seed is None  # falls back to a random seed
+    assert "SEED" in capsys.readouterr().err
+
+
+def test_bad_sign_warns_and_uses_default(
+        tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    text = VALID + "SIGN=abc\n"  # 'a','b','c' are not drawable glyphs
+    cfg = parse_config(_write(tmp_path, text))
+    assert cfg.options.sign == DEFAULT_SIGN
+    assert "SIGN" in capsys.readouterr().err
+
+
+def test_all_value_errors_reported_together(tmp_path: Path) -> None:
+    # Several invalid required values at once are all reported in one message,
+    # not just the first one encountered.
+    text = (
+        "WIDTH=abc\nHEIGHT=0\nENTRY=0-0\nEXIT=99,99\n"
+        "OUTPUT_FILE=\nPERFECT=maybe\n"
+    )
+    with pytest.raises(ConfigError) as excinfo:
         parse_config(_write(tmp_path, text))
+    msg = str(excinfo.value)
+    assert "WIDTH" in msg
+    assert "HEIGHT" in msg
+    assert "ENTRY" in msg
+    assert "OUTPUT_FILE" in msg
+    assert "PERFECT" in msg
+
+
+def test_missing_and_invalid_reported_together(tmp_path: Path) -> None:
+    # A missing required key and an invalid required value are the same class of
+    # fatal problem and appear together in the one aggregated message.
+    text = "WIDTH=abc\nENTRY=0,0\nEXIT=9,9\nOUTPUT_FILE=m.txt\nPERFECT=True\n"
+    with pytest.raises(ConfigError) as excinfo:
+        parse_config(_write(tmp_path, text))
+    msg = str(excinfo.value)
+    assert "missing required key: HEIGHT" in msg   # missing
+    assert "WIDTH must be an integer" in msg        # invalid value
 
 
 def test_bom_config_is_read(tmp_path: Path) -> None:
