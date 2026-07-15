@@ -180,7 +180,9 @@ python3 -m verification.cli maze.txt
 - 明示的なスタックを使う反復実装のため、大きな迷路でも Python の再帰上限に達しません。
 - 「42」用に予約したセルは掘らないだけで、記号を通路の中に保てます。
 
-アルゴリズムは `ALGORITHM` キーで選択できます（現在は `backtracker` のみ）。`generation/generator.py` の `ALGORITHMS` に、たとえば Prim 法や Kruskal 法を登録すれば直接選択できる設計です。
+アルゴリズムは `ALGORITHM` キーで選択できます。**実装済みは `backtracker` のみ**です。
+
+> 注記：`generation/generator.py` の `ALGORITHMS` レジストリは、将来 Prim 法や Kruskal 法などを登録すれば選択肢を増やせる拡張点として用意してあります（ボーナス向けの設計余地であり、現時点で選択できるのは `backtracker` だけです）。
 
 ### プレイアブル盤面（`PERFECT=False`、仕様 IV.4, v2.2）
 
