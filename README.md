@@ -361,8 +361,11 @@ path = gen.solution((0, 0), (19, 14)) # 最短経路 "N/E/S/W"
 
 ## 参考資料（参照先／AI 利用）（Resources）
 
-- 迷路生成アルゴリズム（再帰的バックトラッカー／Prim 法／Kruskal 法）の一般的な解説
-- グラフ理論における全域木と完全迷路の対応関係
+- 迷路生成アルゴリズム全般（再帰的バックトラッカー／Prim 法／Kruskal 法）：Jamis Buck, *"Maze Generation Algorithms"* — <https://weblog.jamisbuck.org/2011/2/7/maze-generation-algorithm-recap>
+- 迷路生成の概説：Wikipedia, *"Maze generation algorithm"* — <https://en.wikipedia.org/wiki/Maze_generation_algorithm>
+- グラフ理論における全域木（完全迷路との対応）：Wikipedia, *"Spanning tree"* — <https://en.wikipedia.org/wiki/Spanning_tree>
+- 独立ループ数（サイクルランク＝`edges - vertices + 1`）：Wikipedia, *"Circuit rank"* — <https://en.wikipedia.org/wiki/Circuit_rank>
+- 最短経路探索（BFS）：Wikipedia, *"Breadth-first search"* — <https://en.wikipedia.org/wiki/Breadth-first_search>
 - 「42」記号の正確な形状は、課題 PDF（`a_maze_ing.pdf`）の図から取得
 
 **AI の利用:** 設計のブレインストーミング、各モジュールの docstring・型注釈付き実装、テスト作成、PDF からの「42」形状の抽出（画像解析）、README の推敲に AI を利用しました。
