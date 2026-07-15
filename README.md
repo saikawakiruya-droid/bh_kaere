@@ -38,9 +38,14 @@
 | `verification/cli.py` | 出力ファイル検証の単体 CLI |
 | `output/writer.py` | 出力ファイルへの書き込み（16 進形式） |
 | `output/ascii_display.py` / `output/display.py` | ASCII 描画と表示モード用レジストリ |
-| `mazegen.py` | 再利用可能な単一ファイルモジュール |
-| `mazegen-1.0.0-*.whl` / `.tar.gz` | ビルド済みパッケージ |
-| `config.txt` / `Makefile` / `pyproject.toml` / `setup.cfg` / `README.md` | 設定、ビルド、ドキュメント |
+| `mazegen.py` | 再利用可能な単一ファイルモジュール（仕様 VI の必須成果物） |
+| `mazegen-1.0.0-*.whl` / `.tar.gz` | ビルド済みパッケージ（仕様 VI：`mazegen-*` をリポジトリ直下に配置） |
+| `pyproject.toml` / `LICENSE.md` | パッケージのビルド元一式とライセンス（仕様 VI） |
+| `config.txt` / `Makefile` / `setup.cfg` / `README.md` | 既定設定、ビルド、ドキュメント |
+
+> **`mazegen-*`（whl/tar.gz）は仕様 VI「Code reusability requirements」で要求される必須提出物**です（ボーナスではありません）。`mazegen-*` の名前でリポジトリ直下に置き、評価時に再ビルドできるよう `pyproject.toml` などビルド元一式と `LICENSE.md` も同梱しています。使い方は「[再利用可能なコードと使用例](#再利用可能なコードと使用例)」を参照。
+>
+> なお、出力ファイルの構造検証は本プロジェクトの `verification/cli.py`（`python3 -m verification.cli <file>`）が担います。リポジトリ直下の `maze_analyzer.py` は**課題側が配布する分析スクリプト**であり、本プロジェクトの提出物（自作コード）ではありません。単独の `validator.py` というファイルは存在しません。
 
 **テスト用（提出・採点対象外。仕様 III.3）:**
 
