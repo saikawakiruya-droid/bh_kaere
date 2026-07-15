@@ -57,6 +57,42 @@ def test_detects_isolated_cell() -> None:
     assert any("isolated" in p for p in problems)
 
 
+def _one_extra_closed_cell() -> Maze:
+    # 4x1: (0,0)-(1,0) connected; (2,0) is a legitimate reserved "42" cell;
+    # (3,0) is an unexpected fully closed (0xF) cell that is NOT reserved.
+    maze = Maze(4, 1)          # every cell starts at 0xF
+    maze.open_wall(0, 0, "E")  # connect (0,0)-(1,0)
+    return maze
+
+
+def test_reserved_known_reports_unexpected_closed_cell() -> None:
+    # With the reserved set known ({(2,0)}), the extra 0xF cell at (3,0) is not
+    # allowed isolation: it falls into the free set, is unreachable, and is
+    # reported as isolated.
+    problems = validate(_one_extra_closed_cell(), (0, 0), (3, 0),
+                        reserved={(2, 0)})
+    assert any("isolated" in p for p in problems), problems
+
+
+def test_reserved_empty_does_not_report_closed_cell() -> None:
+    # Regression guard: on the same board with reserved unknown (empty), every
+    # 0xF cell is treated as allowed isolation, so (3,0) is excluded from the
+    # connectivity check and no isolation is reported.
+    problems = validate(_one_extra_closed_cell(), (0, 0), (3, 0),
+                        reserved=set())
+    assert not any("isolated" in p for p in problems), problems
+
+
+def test_reserved_cell_not_closed_is_reported() -> None:
+    # A cell named in the reserved set must be fully closed (0xF). Here (2,0)
+    # is opened east, so it is flagged as an open reserved cell.
+    maze = Maze(4, 1)
+    maze.open_wall(0, 0, "E")
+    maze.open_wall(2, 0, "E")  # (2,0) is no longer 0xF
+    problems = validate(maze, (0, 0), (3, 0), reserved={(2, 0)})
+    assert any("reserved cell is open: (2,0)" in p for p in problems), problems
+
+
 def test_detects_open_3x3() -> None:
     # Fully open the internal walls of a 3x3 -> open area. Border stays closed.
     maze = Maze(3, 3, [[0 for _ in range(3)] for _ in range(3)])
