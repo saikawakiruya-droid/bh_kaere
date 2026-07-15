@@ -6,6 +6,8 @@ from __future__ import annotations
 import random
 from typing import Set, Tuple
 
+import pytest
+
 from generation.backtracker import generate_backtracker
 from braiding.braiding import braid
 from generation.initializer import reserved_cells
@@ -44,14 +46,21 @@ def test_braiding_adds_loops() -> None:
     assert after == before + opened  # more edges = loops created
 
 
-def test_braiding_reduces_dead_ends() -> None:
-    maze, reserved = _perfect()
+@pytest.mark.parametrize("seed", range(8))
+def test_braiding_reduces_dead_ends(seed: int) -> None:
+    # `after < before` alone is a weak guard: it passes even if a single dead
+    # end is removed. Braiding drives the single-opening cell count from ~30
+    # down to a handful (measured: exactly 2 across seeds on the default
+    # board), so also pin an absolute upper bound to catch a regression that
+    # only nibbles at dead ends instead of nearly eliminating them.
+    maze, reserved = _perfect(seed=seed)
     free = [(x, y) for y in range(maze.height) for x in range(maze.width)
             if (x, y) not in reserved]
     before = sum(1 for c in free if maze.count_openings(*c) == 1)
     braid(maze, reserved, random.Random(2))
     after = sum(1 for c in free if maze.count_openings(*c) == 1)
     assert after < before
+    assert after <= 3
 
 
 def test_braiding_keeps_connectivity_and_no_3x3() -> None:
