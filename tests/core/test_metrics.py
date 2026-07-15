@@ -79,6 +79,45 @@ def test_loops_empty_when_all_reserved() -> None:
     assert count_loops(maze, {(0, 0), (1, 0), (0, 1), (1, 1)}) == 0
 
 
+def test_loops_single_cell_is_zero() -> None:
+    # One vertex, no edges: 0 - 1 + 1 = 0.
+    assert count_loops(Maze(1, 1), NO_RESERVED) == 0
+
+
+def test_loops_two_independent_loops() -> None:
+    # A fully open 3x2 grid: 7 passages over 6 vertices -> 7 - 6 + 1 = 2.
+    maze = Maze(3, 2)
+    for y in range(2):
+        for x in range(3):
+            if x + 1 < 3:
+                maze.open_wall(x, y, "E")
+            if y + 1 < 2:
+                maze.open_wall(x, y, "S")
+    assert count_loops(maze, NO_RESERVED) == 2
+
+
+def test_loops_disconnected_free_region_is_unreliable() -> None:
+    # KNOWN LIMITATION: count_loops uses edges - vertices + 1, which is the
+    # cycle rank only for a *connected* graph. Free cells stay connected during
+    # braiding, so this holds in practice, but a disconnected free region makes
+    # the identity under-count by (components - 1). Here two separate corridors
+    # (5 vertices, 3 edges) yield 3 - 5 + 1 = -1, not 0. Pinned to document the
+    # assumption, not to bless -1 as a meaningful loop count.
+    maze = Maze(5, 1)
+    maze.open_wall(0, 0, "E")   # (0,0)-(1,0)
+    maze.open_wall(1, 0, "E")   # (1,0)-(2,0); gap at (2,0)-(3,0)
+    maze.open_wall(3, 0, "E")   # (3,0)-(4,0)
+    assert count_loops(maze, NO_RESERVED) == -1
+
+
+def test_loops_reserved_edge_not_double_excluded() -> None:
+    # A 3x1 corridor with the middle cell reserved leaves two isolated single
+    # cells (0 edges among 2 free vertices): 0 - 2 + 1 = -1 (same disconnected
+    # caveat). The reserved cell and its incident edges are excluded.
+    maze = _corridor(3)
+    assert count_loops(maze, {(1, 0)}) == -1
+
+
 # --------------------------------------------------------------------------- #
 # count_dead_ends
 # --------------------------------------------------------------------------- #
@@ -129,3 +168,69 @@ def test_dead_ends_fully_sign_enclosed_is_zero() -> None:
     # (0,0): one opening (south), east faces sign, north/west border -> excluded.
     # (0,1): one opening (north), east faces sign, south/west border -> excluded.
     assert count_dead_ends(maze, reserved) == 0
+
+
+def test_dead_ends_single_cell_is_zero() -> None:
+    # A lone cell has zero openings, so it is not a dead end (which needs one).
+    assert count_dead_ends(Maze(1, 1), NO_RESERVED) == 0
+
+
+def test_dead_ends_fully_closed_cell_not_counted() -> None:
+    # A non-reserved cell walled on all four sides (0 openings) is isolated, not
+    # a dead end: only single-opening cells qualify. (0,0)-(1,0) are opened;
+    # (0,1)/(1,1) stay fully closed and must not be counted.
+    maze = Maze(2, 2)
+    maze.open_wall(0, 0, "E")
+    # (0,0) and (1,0): one opening each, other sides border -> two dead ends.
+    # (0,1),(1,1): zero openings -> not dead ends.
+    assert count_dead_ends(maze, NO_RESERVED) == 2
+
+
+def test_dead_ends_three_way_junction_not_a_dead_end() -> None:
+    # The centre of a plus shape has three openings, so it is not a dead end;
+    # the three tips (one opening, border walls) are the real dead ends.
+    maze = Maze(3, 3)
+    maze.open_wall(1, 1, "N")
+    maze.open_wall(1, 1, "W")
+    maze.open_wall(1, 1, "E")
+    # Tips (1,0), (0,1), (2,1) each have one opening -> 3 real dead ends.
+    assert count_dead_ends(maze, NO_RESERVED) == 3
+
+
+def test_dead_ends_diagonal_sign_does_not_exclude() -> None:
+    # Only orthogonally adjacent signs matter. (1,1) opens north only; its four
+    # orthogonal neighbours are normal cells, and the sole reserved cell (0,0)
+    # is diagonal -> (1,1) stays a real dead end. (1,0), whose west wall faces
+    # the diagonal-to-(1,1) sign at (0,0), is excluded, so the count is 1.
+    maze = Maze(3, 3)
+    maze.open_wall(1, 1, "N")   # (1,1)-(1,0)
+    reserved = {(0, 0)}
+    assert count_dead_ends(maze, reserved) == 1
+
+
+def test_dead_ends_multiple_sign_walls_excluded() -> None:
+    # (1,1) opens north only and is flanked by signs on west, east and south:
+    # every closed side is a sign, so it is excluded. The real dead end is
+    # (1,0), reached from (1,1) with only border/normal walls around it.
+    maze = Maze(3, 3)
+    maze.open_wall(1, 1, "N")   # (1,1)-(1,0)
+    reserved = {(0, 1), (2, 1), (1, 2)}
+    assert count_dead_ends(maze, reserved) == 1
+
+
+def test_dead_ends_interior_stub_is_real() -> None:
+    # A dead end need not sit on the border: (1,1) opens only west into the
+    # corridor (0,1)-(1,1)-... Its other three sides face normal cells (walls),
+    # none of them a sign, so it is a real dead end.
+    maze = Maze(3, 3)
+    maze.open_wall(0, 1, "E")   # (0,1)-(1,1): (1,1)'s only opening (west)
+    maze.open_wall(0, 1, "N")   # give (0,1) a second opening so it is not one
+    # (1,1): one opening (west), N/E/S face normal cells -> real dead end.
+    # (0,1): two openings (east, north) -> not a dead end.
+    # (0,0): one opening (south) with border elsewhere -> real dead end.
+    assert count_dead_ends(maze, NO_RESERVED) == 2
+
+
+def test_dead_ends_all_reserved_is_zero() -> None:
+    maze = Maze(2, 2)
+    assert count_dead_ends(maze, {(0, 0), (1, 0), (0, 1), (1, 1)}) == 0
