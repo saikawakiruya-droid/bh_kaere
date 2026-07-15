@@ -11,7 +11,7 @@ import pytest
 from generation.backtracker import generate_backtracker
 from braiding.braiding import braid
 from generation.initializer import reserved_cells
-from core.maze import Maze, bfs_distances
+from core.maze import Maze, bfs_distances, playable_corridors
 from verification.verifier import validate
 
 Coord = Tuple[int, int]
@@ -106,3 +106,25 @@ def test_braided_maze_not_perfect() -> None:
     free = {(x, y) for y in range(maze.height) for x in range(maze.width)
             if (x, y) not in reserved}
     assert set(bfs_distances(maze, (0, 0)).keys()) >= free
+
+
+def test_braiding_warns_when_corridor_cannot_open(capsys) -> None:  # type: ignore[no-untyped-def]  # noqa: E501
+    # A corridor cell whose only in-bounds neighbours are reserved cannot reach
+    # two openings, so phase 2 emits the "could not open corridor" warning.
+    maze = Maze(3, 3)
+    reserved = {(1, 0), (0, 1)}
+    for (x, y) in reserved:
+        maze.cells[y][x] = 0xF
+    braid(maze, reserved, random.Random(0), corridors={(0, 0)}, min_loops=0)
+    err = capsys.readouterr().err
+    assert "could not open corridor at (0,0) to 2 openings" in err
+
+
+def test_braiding_does_not_warn_on_a_normal_board(capsys) -> None:  # type: ignore[no-untyped-def]  # noqa: E501
+    # False-positive guard: braiding a normal perfect board with its real
+    # corridors must not emit the corridor warning.
+    maze, reserved = _perfect(20, 15, seed=5)
+    braid(maze, reserved, random.Random(2),
+          corridors=playable_corridors(20, 15), min_loops=2)
+    err = capsys.readouterr().err
+    assert "could not open corridor" not in err
