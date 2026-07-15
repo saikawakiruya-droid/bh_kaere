@@ -190,9 +190,12 @@ def _check_playable(maze: Maze, reserved: Set[Coord],
     if free_count > 0:
         loops = count_loops(maze, reserved)
         if loops < 2:
+            # count_loops uses edges - vertices + 1, which can go negative on a
+            # disconnected free region; clamp the reported figure to 0 so the
+            # message never shows a nonsensical negative loop count.
             problems.append(
                 f"playable board needs at least 2 independent loops, "
-                f"found {loops}"
+                f"found {max(0, loops)}"
             )
 
     # Dead ends should be rare (a couple are tolerated; zero is the bonus).
