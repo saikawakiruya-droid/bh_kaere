@@ -265,7 +265,7 @@ def initialize_maze(width: int, height: int,
         height: Maze height (in cells).
         entry: Entry coordinate (avoided by the sign).
         exit_: Exit coordinate (avoided by the sign).
-        sign: The string to embed.
+        sign: The 42.
         gap: Digit gap (``MIN_GAP``-``MAX_GAP``). ``None`` to auto-select
             based on the width.
         corridors: Cells that must become open corridors. Used by the playable

@@ -23,6 +23,7 @@
   - 注意: IV.5 は playable を「**"42" 以外にデッドエンドが無い**」と記述する
     一方、IV.4 は「デッドエンドは稀（数個は許容）」とする。判定機は IV.5 側
     なので、実機で確認するまで合否は不明。
+	確認済み大丈夫そう
 
 ## テスト・検証の緩さ
 
@@ -39,12 +40,14 @@
 - [ ] **#14 (new) `pyproject.toml` の著者がプレースホルダのまま**
   - `authors = [{ name = "42 student" }]`。`LICENSE.md` / `README.md` の
     `naarai, ksadayas` と不一致。
+	これはクリアされてそう？
 
 - [ ] **#15 (new) `SIGN` オプションの説明が実装より過大**
   - README / `options.py` の表は「String to embed（任意文字列）」と読めるが、
     `initializer.GLYPHS` には `'4'` と `'2'` しか定義がなく、`_parse_sign()`
     が他の文字を `ConfigValueError` で弾く。
   - 「使用可能文字は `2` と `4` のみ」と明記する。
+  やったけどダブルチェックplz,READMEのこれが見つけられない
 
 ## 軽微 / ボーナス
 
@@ -52,11 +55,26 @@
   考慮しない** — 単体モジュールの要件（Ch.VI）としては許容だが、本課題の
   盤面生成に再利用すると IV.4 違反の迷路を作り得る。docstring に制約を
   明記するか、本体 `braiding.py` と同等のガードを入れる。
+  一応
+　    def _braid(self, ratio: float = 1.0) -> None:
+        """Reduce dead ends to create loops (imperfect-maze conversion).
+
+        Note:
+            This standalone braiding is intentionally minimal: it does NOT
+            guard against fully-open 3x3 areas, and it does NOT protect the
+            "42" sign cells. It is meant only for the reusable
+            ``MazeGenerator`` module. Do not reuse it to build the spec IV.4
+            board -- that path uses ``braiding.braiding.braid`` in the main
+            project, which enforces the "passages at most 2 cells wide"
+            (no open 3x3) and sign-protection rules.
+        """
+		いれといた
 
 - [ ] **#12 (bonus) デッドエンド0の完全ブレイド盤面**（PDF Ch.VIII）
   - `maze_analyzer.py --max-dead-ends 0` で確認できる「デッドエンドなし」
     盤面はボーナス対象。現状は残デッドエンド 2 個。braid の残デッドエンド
     解消（2本目の壁開放許可など）が必要。
+	これも大丈夫そう
 
 ---
 

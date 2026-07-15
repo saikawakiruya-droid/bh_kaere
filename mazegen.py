@@ -143,7 +143,13 @@ class MazeGenerator:
         return self
 
     def _braid(self, ratio: float = 1.0) -> None:
-        """Reduce dead ends to create loops (imperfect-maze conversion)."""
+        """Reduce dead ends to create loops (imperfect-maze conversion).
+
+        Note:
+            Standalone/minimal: no 3x3-open guard and no "42" protection.
+            For the reusable MazeGenerator only -- the spec IV.4 board
+            uses braiding.braiding.braid, which enforces those rules.
+        """
         dead = [(x, y) for y in range(self.height) for x in range(self.width)
                 if self._openings(x, y) == 1]
         self._rng.shuffle(dead)

@@ -28,6 +28,8 @@
 
 PY_VERSION ?= 3.12
 CONFIG     ?= config.txt
+ANALYZER   ?= maze_analyzer.py
+OUTPUT      = $(shell awk -F= '/^[[:space:]]*OUTPUT_FILE[[:space:]]*=/{gsub(/[[:space:]]/,"",$$2); print $$2}' $(CONFIG))
 
 VENV     = .venv
 VENV_PY  = $(VENV)/bin/python
@@ -42,7 +44,7 @@ MYPY_FLAGS = --warn-return-any --warn-unused-ignores \
              --ignore-missing-imports --disallow-untyped-defs \
              --check-untyped-defs
 
-.PHONY: install run debug test lint lint-strict clean distclean
+.PHONY: install run debug test lint lint-strict analyze analyze-bonus clean distclean
 
 # Create an isolated environment and install the dev tools into it.
 # Prefer uv (fast); fall back to the stdlib venv + pip when uv is absent.
@@ -90,3 +92,15 @@ clean:
 # cleaning does not force a full reinstall).
 distclean: clean
 	rm -rf $(VENV)
+
+# Generate the maze from CONFIG, then judge it with the official
+# maze_analyzer.py. Non-interactive (< /dev/null) so no menu opens.
+analyze:
+	$(PY) a_maze_ing.py $(CONFIG) < /dev/null
+	@echo ">> analyzing $(OUTPUT) with the official maze_analyzer.py"
+	$(PY) $(ANALYZER) $(OUTPUT)
+
+# Same, but require ZERO real dead-ends (the no-dead-end bonus check).
+analyze-bonus:
+	$(PY) a_maze_ing.py $(CONFIG) < /dev/null
+	$(PY) $(ANALYZER) $(OUTPUT) --max-dead-ends 0

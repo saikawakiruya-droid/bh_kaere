@@ -200,7 +200,7 @@ def _check_playable(maze: Maze, reserved: Set[Coord],
 
     # Dead ends should be rare (a couple are tolerated; zero is the bonus).
     dead = count_dead_ends(maze, reserved)
-    threshold = max(4, free_count // 25)
+    threshold = 2
     if dead > threshold:
         problems.append(
             f"too many dead ends for a playable board: {dead} "
