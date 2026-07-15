@@ -111,11 +111,16 @@ def test_at_least_two_independent_loops() -> None:
     assert count_loops(maze, reserved) >= PLAYABLE_MIN_LOOPS
 
 
-def test_dead_ends_stay_rare() -> None:
-    cfg = _config(25, 20, (0, 0), (24, 19), 7)
+@pytest.mark.parametrize("seed", range(8))
+def test_dead_ends_stay_rare(seed: int) -> None:
+    # An independent, tight pin: the playable builder produces a perfectly
+    # braided board (zero real dead ends) across seeds. Asserting an absolute
+    # count of 0 -- rather than reusing verifier.py's own max(4, free // 25)
+    # threshold -- keeps this a real regression guard instead of a mirror of
+    # the product code (the looseness of that threshold is tracked as #13).
+    cfg = _config(25, 20, (0, 0), (24, 19), seed)
     maze, reserved = build_maze(cfg)
-    free = cfg.width * cfg.height - len(reserved)
-    assert count_dead_ends(maze, reserved) <= max(4, free // 25)
+    assert count_dead_ends(maze, reserved) == 0
 
 
 def test_small_board_still_playable() -> None:
