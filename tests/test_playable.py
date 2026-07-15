@@ -10,7 +10,7 @@ import pytest
 
 from a_maze_ing import PLAYABLE_MIN_LOOPS, _corridor_cells, build_maze
 from braiding.braiding import braid
-from core.maze import Maze
+from core.maze import Maze, playable_corridors
 from core.metrics import count_dead_ends, count_loops
 from generation.backtracker import generate_backtracker
 from generation.initializer import reserved_cells
@@ -52,6 +52,24 @@ def _openings(maze: Maze, x: int, y: int) -> int:
 # 30x12 seed=7 is the regression case: the "42" sign used to be placed so that
 # it reserved three of the centre cell's four neighbours, leaving the centre a
 # dead end that braiding could not repair.
+@pytest.mark.parametrize("width, height, expected", [
+    (25, 20, {(0, 0), (24, 0), (0, 19), (24, 19), (12, 10)}),
+    (20, 15, {(0, 0), (19, 0), (0, 14), (19, 14), (10, 7)}),
+    (8, 7, {(0, 0), (7, 0), (0, 6), (7, 6), (4, 3)}),
+    (5, 5, {(0, 0), (4, 0), (0, 4), (4, 4), (2, 2)}),
+])
+def test_playable_corridors_are_the_expected_cells(
+        width: int, height: int, expected: Set[Coord]) -> None:
+    # Cross-check playable_corridors against coordinates written literally in
+    # the test, so a bug that drops or misplaces one of the four corners or the
+    # centre is caught. The open-corridor test below iterates over the product
+    # function's own output, so on its own it would pass over a dropped cell.
+    # Note: for an even width/height the centre is width//2 / height//2, i.e.
+    # the cell just past the geometric middle (e.g. width 20 -> x = 10).
+    assert playable_corridors(width, height) == expected
+    assert len(playable_corridors(width, height)) == 5
+
+
 @pytest.mark.parametrize("width,height,seed", [
     (25, 20, 42),
     (30, 12, 7),
