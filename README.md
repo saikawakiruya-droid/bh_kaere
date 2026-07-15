@@ -71,11 +71,14 @@ make run CONFIG=my_config.txt
 # デバッグ実行（pdb）
 make debug
 
-# テスト
+# テスト（tests/ 配下の pytest スイートを実行）
 make test
 
 # 静的検査（flake8 + mypy）
 make lint
+
+# 静的検査（mypy を --strict で実行する厳格版）
+make lint-strict
 ```
 
 直接実行する場合:
@@ -86,7 +89,9 @@ python3 a_maze_ing.py config.txt
 
 > 注記：`make install` は `./.venv` に隔離した仮想環境を構築し（`uv` を優先し、無ければ標準ライブラリの `venv` にフォールバック）、`run`／`debug`／`test`／`lint` はその環境を自動で使用します。Python のバージョンは `PY_VERSION`（既定 `3.12`）で指定できますが、あくまで優先指定であり、無い環境では利用可能な `python3` にフォールバックします。
 
-> 注記：`setup.cfg` では `flake8` の `max-line-length = 100` を設定しています。これは、docstring と型ヒントの可読性を保つために、標準の 79 文字を意図的に緩和したものです。`make lint` は課題指定のフラグで `flake8 .` と `mypy .` を実行します。
+> 注記：`make test` は仮想環境の `pytest -q` で `tests/` 配下の全テスト（提出・採点対象外／仕様 III.3）を実行します。何を検証しているかは「[生成後の検証](#生成後の検証verificationverifierpy--verificationclipy)」および各 `tests/**/test_*.py` を参照してください。
+
+> 注記：静的検査には 2 つのターゲットがあります。`make lint` は `flake8 .` と `mypy .`（`--warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs` の複数オプション付き）を実行します。`make lint-strict` は `flake8 .` と `mypy . --strict` を実行する厳格版です。`setup.cfg` では `flake8` の `max-line-length = 100` を設定しており、docstring と型ヒントの可読性のために標準の 79 文字を意図的に緩和しています。
 
 ### 出力ファイルの検証
 
