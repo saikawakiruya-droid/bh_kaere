@@ -1,9 +1,0 @@
-# attack (攻撃意図): 最小退化サイズ 1x1。セルが1つしかないので ENTRY と EXIT を別座標に置けない。
-# hypothesis (壊れると予想する点): ENTRY!=EXIT 制約と座標範囲(0<=x<1)の板挟みで、意味のあるエラーを返せずクラッシュ or 不明瞭な失敗になる。
-WIDTH=1
-HEIGHT=1
-ENTRY=0,0
-EXIT=0,0
-OUTPUT_FILE=adv_01.out
-PERFECT=True
-SEED=42

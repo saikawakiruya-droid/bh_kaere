@@ -17,9 +17,7 @@
 
 ---
 
-## ファイル構成（提出コードとテスト）
-
-**提出・採点対象（リポジトリ直下）:**
+## ファイル構成
 
 迷路パイプラインは役割ごとの小さなパッケージに分割されており、各モジュールは単独でインポートできます。**入力検証**（迷路を組む前に設定ファイルの入力を検査＝`validation/`）と、**構造検証**（組み上がった迷路の構造を検査＝`verification/`）は別プロセスである点に注意してください。
 
@@ -47,19 +45,13 @@
 >
 > なお、出力ファイルの構造検証は本プロジェクトの `verification/cli.py`（`python3 -m verification.cli <file>`）が担います。リポジトリ直下の `maze_analyzer.py` は**課題側が配布する分析スクリプト**であり、本プロジェクトの提出物（自作コード）ではありません。単独の `validator.py` というファイルは存在しません。
 
-**テスト用（提出・採点対象外。仕様 III.3）:**
-
-- `tests/` 配下の `test_*.py`：動作確認用です。`make test` で実行します。
-
-> テストは `tests/` に分離しているため、提出コード（リポジトリ直下の `*.py` とパッケージ）と明確に区別されています。テストはプロジェクトの動作確認だけを目的としています。
-
 ---
 
 ## 使い方（インストール／実行）（Instructions）
 
 ### 依存関係
 
-実行に外部ライブラリは不要です（標準ライブラリのみ使用）。開発時には `flake8`、`mypy`、`pytest` を使用します。
+実行に外部ライブラリは不要です（標準ライブラリのみ使用）。静的検査には `flake8`、`mypy` を使用します。
 
 ### セットアップと実行
 
@@ -76,9 +68,6 @@ make run CONFIG=my_config.txt
 # デバッグ実行（pdb）
 make debug
 
-# テスト（tests/ 配下の pytest スイートを実行）
-make test
-
 # 静的検査（flake8 + mypy）
 make lint
 
@@ -92,9 +81,7 @@ make lint-strict
 python3 a_maze_ing.py config.txt
 ```
 
-> 注記：`make install` は `./.venv` に隔離した仮想環境を構築し（`uv` を優先し、無ければ標準ライブラリの `venv` にフォールバック）、`run`／`debug`／`test`／`lint` はその環境を自動で使用します。Python のバージョンは `PY_VERSION`（既定 `3.12`）で指定できますが、あくまで優先指定であり、無い環境では利用可能な `python3` にフォールバックします。
-
-> 注記：`make test` は仮想環境の `pytest -q` で `tests/` 配下の全テスト（提出・採点対象外／仕様 III.3）を実行します。何を検証しているかは「[生成後の検証](#生成後の検証verificationverifierpy--verificationclipy)」および各 `tests/**/test_*.py` を参照してください。
+> 注記：`make install` は `./.venv` に隔離した仮想環境を構築し（`uv` を優先し、無ければ標準ライブラリの `venv` にフォールバック）、`run`／`debug`／`lint` はその環境を自動で使用します。Python のバージョンは `PY_VERSION`（既定 `3.12`）で指定できますが、あくまで優先指定であり、無い環境では利用可能な `python3` にフォールバックします。
 
 > 注記：静的検査には 2 つのターゲットがあります。`make lint` は `flake8 .` と `mypy .`（`--warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs` の複数オプション付き）を実行します。`make lint-strict` は `flake8 .` と `mypy . --strict` を実行する厳格版です。`setup.cfg` では `flake8` の `max-line-length = 100` を設定しており、docstring と型ヒントの可読性のために標準の 79 文字を意図的に緩和しています。
 

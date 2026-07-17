@@ -1,8 +1,0 @@
-# intent (意図): ENTRY が盤面範囲外
-# expected (期待する挙動): config error: ENTRY (...) is outside the maze bounds
-WIDTH=20
-HEIGHT=15
-ENTRY=99,99
-EXIT=19,14
-OUTPUT_FILE=out.txt
-PERFECT=True

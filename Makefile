@@ -1,6 +1,6 @@
 # A-Maze-ing Makefile
 #
-# Main targets: install / run / debug / clean / lint / lint-strict / test
+# Main targets: install / run / debug / clean / lint / lint-strict
 #
 # `make install` builds an isolated virtual environment in ./.venv and
 # installs the dev tools there (prefers `uv`, falls back to `python -m venv`).
@@ -44,7 +44,7 @@ MYPY_FLAGS = --warn-return-any --warn-unused-ignores \
              --ignore-missing-imports --disallow-untyped-defs \
              --check-untyped-defs
 
-.PHONY: install run debug test lint lint-strict analyze analyze-bonus clean distclean
+.PHONY: install run debug lint lint-strict analyze analyze-bonus clean distclean
 
 # Create an isolated environment and install the dev tools into it.
 # Prefer uv (fast); fall back to the stdlib venv + pip when uv is absent.
@@ -55,12 +55,12 @@ install:
 			echo ">> Python $(PY_VERSION) unavailable; falling back to uv's default Python"; \
 			uv venv $(VENV); \
 		}; \
-		uv pip install --python $(VENV_PY) flake8 mypy pytest; \
+		uv pip install --python $(VENV_PY) flake8 mypy; \
 	else \
 		echo ">> uv not found; using '$(PYTHON) -m venv'"; \
 		$(PYTHON) -m venv $(VENV); \
 		$(VENV_PY) -m pip install --upgrade pip; \
-		$(VENV_PY) -m pip install flake8 mypy pytest; \
+		$(VENV_PY) -m pip install flake8 mypy; \
 	fi
 	@$(VENV_PY) -c 'import sys; v=sys.version_info; print(f">> environment ready: Python {v.major}.{v.minor}.{v.micro}"); \
 		(v[:2] >= (3, 10)) or sys.stderr.write(">> WARNING: Python < 3.10; the subject requires >= 3.10\n")'
@@ -70,9 +70,6 @@ run:
 
 debug:
 	$(PY) -m pdb a_maze_ing.py $(CONFIG)
-
-test:
-	$(PY) -m pytest -q
 
 lint:
 	$(PY) -m flake8 .
