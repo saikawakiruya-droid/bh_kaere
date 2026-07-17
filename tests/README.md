@@ -6,6 +6,54 @@
 
 ---
 
+## 提出ブランチとの関係と `make test` の使い方
+
+提出ブランチ（`submit_0713`）は **直接プロダクトに関係するファイルのみ**で構成
+しており、`tests/`・Makefile の `test` ターゲット・`install` の `pytest` 導入は
+含めていません（仕様 III.3：テストは提出・採点対象外）。テストは本 `main`
+ブランチに保持しています（**最新版は `origin/0715_issuedone`**。`main` は
+`tests/core/test_metrics.py` を欠く旧セットです）。
+
+### レビュー時にテストを追加する（変更点）
+
+提出物（`submit_0713`）をチェックアウトした状態でテストを動かす手順:
+
+1. **tests/ を取得**（最新の `origin/0715_issuedone` から。`test_metrics.py` を含む）:
+
+   ```bash
+   git fetch origin
+   git checkout origin/0715_issuedone -- tests
+   ```
+
+2. **pytest を導入**（`make install` からは外してあるため個別に入れる）:
+
+   ```bash
+   .venv/bin/python -m pip install pytest
+   ```
+
+3. （任意）**Makefile に `test` ターゲットを戻す** — `.PHONY` 行に `test` を加え、
+   次のターゲットを追記する:
+
+   ```make
+   test:
+   	$(PY) -m pytest -q
+   ```
+
+### その後の使い方
+
+- Makefile に `test` を戻した場合: `make test`
+- 戻さなくても直接実行できる:
+
+  ```bash
+  .venv/bin/python -m pytest -q                          # 全テスト
+  .venv/bin/python -m pytest tests/test_playable.py -q   # 個別ファイル
+  ```
+
+> 本 `main` ブランチはテストと `test` ターゲットを保持しているので、`main` 上では
+> 上記の追加なしにそのまま `make test` が使えます。
+
+---
+
 ## 実行方法
 
 ```bash
