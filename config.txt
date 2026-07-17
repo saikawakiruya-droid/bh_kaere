@@ -16,5 +16,43 @@ SEED=42
 ALGORITHM=backtracker
 # DISPLAY: display mode (currently only ascii)
 DISPLAY=ascii
-# SIGN: characters to embed (default 42)
+# SIGN: characters to embed (only '2' and '4'; default 42)
 SIGN=42
+
+# =====================================================================
+# 設定例（Example scenarios）
+#
+# 別の設定を試すには:
+#   1) 上の "Required keys" と "Optional keys" の各行をすべてコメントアウト
+#      する（先頭に # を付ける）
+#   2) 試したい下記ブロックの各行から先頭の # を外して有効化する
+#
+# 同じキーが 2 回現れると警告が出て「後勝ち」になります。常にどれか
+# 1 ブロックだけを有効にしてください。
+# =====================================================================
+
+# --- 例1: Pac-Man 風プレイアブル盤面（PERFECT=False, 仕様 IV.4 v2.2） ---
+# WIDTH=25
+# HEIGHT=20
+# ENTRY=0,0
+# EXIT=24,19
+# OUTPUT_FILE=maze.txt
+# PERFECT=False
+# SEED=42
+
+# --- 例2: 大きめの完全迷路・別シード ---
+# WIDTH=40
+# HEIGHT=30
+# ENTRY=0,0
+# EXIT=39,29
+# OUTPUT_FILE=maze.txt
+# PERFECT=True
+# SEED=7
+
+# --- 例3: 小さな盤面（サイン「42」は自動省略。省略の警告が出るのは正常） ---
+# WIDTH=6
+# HEIGHT=5
+# ENTRY=0,0
+# EXIT=5,4
+# OUTPUT_FILE=maze.txt
+# PERFECT=True
