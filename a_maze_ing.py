@@ -36,14 +36,20 @@ Coord = Tuple[int, int]
 PLAYABLE_MIN_LOOPS = 2
 
 
-def _corridor_cells(width: int, height: int) -> Set[Coord]:
-    """Backward-compatible alias for :func:`core.maze.playable_corridors`.
-
-    The corridor definition now lives in :mod:`core.maze` as the single source
-    of truth shared with :mod:`verification.verifier`; this thin delegator is
-    kept only so existing callers of ``_corridor_cells`` keep working.
-    """
-    return playable_corridors(width, height)
+# [DEAD CODE — commented out] Full-pipeline-only assumption.
+# Backward-compatible alias for `core.maze.playable_corridors`. It has no
+# callers anywhere (`build_maze` uses `playable_corridors` directly), so under
+# the "only the whole program is called externally" premise this thin delegator
+# is dead. Kept here (commented) for review.
+#
+# def _corridor_cells(width: int, height: int) -> Set[Coord]:
+#     """Backward-compatible alias for :func:`core.maze.playable_corridors`.
+#
+#     The corridor definition now lives in :mod:`core.maze` as the single source
+#     of truth shared with :mod:`verification.verifier`; this thin delegator is
+#     kept only so existing callers of ``_corridor_cells`` keep working.
+#     """
+#     return playable_corridors(width, height)
 
 
 def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
