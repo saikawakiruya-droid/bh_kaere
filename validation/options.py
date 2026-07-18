@@ -23,8 +23,7 @@ import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set
 
-from generation.generator import algorithm_names
-from generation.initializer import GLYPHS
+import mazegen
 from output.display import display_names
 
 # The optional keys interpreted by this module.
@@ -33,6 +32,10 @@ OPTIONAL_KEYS: Set[str] = {"SEED", "ALGORITHM", "DISPLAY", "SIGN"}
 DEFAULT_ALGORITHM = "backtracker"
 DEFAULT_DISPLAY = "ascii"
 DEFAULT_SIGN = "42"
+
+# The only generation algorithm (the reusable mazegen backtracker). Kept as a
+# validated choice so the ALGORITHM config key stays meaningful.
+ALGORITHM_NAMES = ["backtracker"]
 
 
 @dataclass
@@ -70,13 +73,14 @@ def _parse_choice(value: Optional[str], default: str,
 
 
 def _parse_sign(value: Optional[str]) -> str:
-    """Validate that every character of ``SIGN`` is drawable (in GLYPHS)."""
+    """Validate that every character of ``SIGN`` is drawable by mazegen."""
     if value is None:
         return DEFAULT_SIGN
-    unknown = sorted({ch for ch in value if ch not in GLYPHS})
+    drawable = mazegen.supported_sign_chars()
+    unknown = sorted({ch for ch in value if ch not in drawable})
     if unknown:
         print(f"warning: SIGN contains characters that cannot be drawn: "
-              f"{unknown} (available: {sorted(GLYPHS)}; "
+              f"{unknown} (available: {sorted(drawable)}; "
               f"using default '{DEFAULT_SIGN}')", file=sys.stderr)
         return DEFAULT_SIGN
     return value
@@ -97,7 +101,7 @@ def parse_options(raw: Dict[str, str]) -> Options:
     return Options(
         seed=_parse_seed(raw.get("SEED")),
         algorithm=_parse_choice(
-            raw.get("ALGORITHM"), DEFAULT_ALGORITHM, algorithm_names(),
+            raw.get("ALGORITHM"), DEFAULT_ALGORITHM, ALGORITHM_NAMES,
             "ALGORITHM"),
         display=_parse_choice(
             raw.get("DISPLAY"), DEFAULT_DISPLAY, display_names(), "DISPLAY"),

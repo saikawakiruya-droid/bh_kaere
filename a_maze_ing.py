@@ -14,15 +14,12 @@ problem it prints a clear message and returns an exit code.
 
 from __future__ import annotations
 
-import random
 import sys
-from typing import List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-from braiding.braiding import braid
+import mazegen
 from core.errors import MazeError
-from core.maze import Maze, path_to_cells, playable_corridors, solve
-from generation.generator import get_algorithm
-from generation.initializer import initialize_maze
+from core.maze import ALL_WALLS, Maze, path_to_cells, solve
 from output.ascii_display import WALL_COLORS
 from output.display import get_display_mode
 from output.writer import write_maze
@@ -36,30 +33,15 @@ Coord = Tuple[int, int]
 PLAYABLE_MIN_LOOPS = 2
 
 
-# [DEAD CODE — commented out] Full-pipeline-only assumption.
-# Backward-compatible alias for `core.maze.playable_corridors`. It has no
-# callers anywhere (`build_maze` uses `playable_corridors` directly), so under
-# the "only the whole program is called externally" premise this thin delegator
-# is dead. Kept here (commented) for review.
-#
-# def _corridor_cells(width: int, height: int) -> Set[Coord]:
-#     """Backward-compatible alias for :func:`core.maze.playable_corridors`.
-#
-#     The corridor definition now lives in :mod:`core.maze` as the single source
-#     of truth shared with :mod:`verification.verifier`; this thin delegator is
-#     kept only so existing callers of ``_corridor_cells`` keep working.
-#     """
-#     return playable_corridors(width, height)
-
-
 def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
-    """Build the maze from the config (init -> reserve sign -> generate -> braid).
+    """Build the maze by delegating generation to :mod:`mazegen`.
 
-    When ``PERFECT=False`` the maze is shaped into a playable Pac-Man board
-    (spec IV.4, v2.2): the four corners and the centre are kept free of the
-    "42" sign and turned into open corridors, dead ends are reduced, and at
-    least two independent loops are guaranteed — all while keeping passages at
-    most 2 cells wide.
+    Assembles a spec dict from the config and passes it to
+    :func:`mazegen.generate_mazes`, which carves the maze, embeds the "42"
+    sign, and — when ``PERFECT=False`` — braids it into a playable Pac-Man
+    board. The returned wall grid is wrapped back into a :class:`~core.maze.Maze`
+    for evaluation and output, and the reserved ("42") cells are recovered as
+    the fully closed cells of that grid.
 
     Args:
         config: The validated configuration.
@@ -67,18 +49,22 @@ def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
     Returns:
         ``(maze, reserved)``, where ``reserved`` is the "42" reserved-cell set.
     """
-    rng = random.Random(config.options.seed)
-    corridors = (None if config.perfect
-                 else playable_corridors(config.width, config.height))
-    _, reserved = initialize_maze(
-        config.width, config.height,
-        entry=config.entry, exit_=config.exit,
-        sign=config.options.sign, corridors=corridors)
-    generate = get_algorithm(config.options.algorithm)
-    maze = generate(config.width, config.height, reserved, rng, config.entry)
-    if not config.perfect:
-        braid(maze, reserved, rng,
-              corridors=corridors, min_loops=PLAYABLE_MIN_LOOPS)
+    spec: Dict[str, Any] = {
+        "width": config.width,
+        "height": config.height,
+        "perfect": config.perfect,
+        "seed": config.options.seed,
+        "entry": config.entry,
+        "exit": config.exit,
+        "sign": config.options.sign,
+        "min_loops": PLAYABLE_MIN_LOOPS,
+    }
+    grid = mazegen.generate_mazes([spec])[0]
+    maze = Maze(config.width, config.height, cells=grid)
+    reserved = {(x, y)
+                for y in range(config.height)
+                for x in range(config.width)
+                if grid[y][x] == ALL_WALLS}
     return maze, reserved
 
 
