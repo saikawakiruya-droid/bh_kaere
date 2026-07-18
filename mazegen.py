@@ -115,6 +115,28 @@ class MazeGenerator:
         raise ValueError("every cell is reserved: nothing to carve")
 
     # --- Generation -------------------------------------------------------
+    def _braid(self, ratio: float = 1.0,
+               reserved: "frozenset[Coord]" = frozenset()) -> None:
+        """Reduce dead ends to create loops (imperfect-maze conversion).
+
+        Note:
+            Standalone/minimal: no 3x3-open guard and no "42" protection.
+            For the reusable MazeGenerator only -- the spec IV.4 board
+            uses braiding.braiding.braid, which enforces those rules.
+        """
+        dead = [(x, y) for y in range(self.height) for x in range(self.width)
+                if (x, y) not in reserved and self._openings(x, y) == 1]
+        self._rng.shuffle(dead)
+        for (x, y) in dead[:int(len(dead) * ratio)]:
+            if self._openings(x, y) != 1:
+                continue
+            cands = [d for d, (dx, dy, bit) in _DIRS.items()
+                     if self._in_bounds(x + dx, y + dy)
+                     and (x + dx, y + dy) not in reserved
+                     and self.grid[y][x] & bit]
+            if cands:
+                self._open(x, y, self._rng.choice(cands))
+
     def generate(self, start: Optional[Coord] = None,
                  reserved: Optional[Set[Coord]] = None) -> "MazeGenerator":
         """Generate the maze with an iterative recursive backtracker.
@@ -165,28 +187,6 @@ class MazeGenerator:
         if not self.perfect:
             self._braid(reserved=frozen)
         return self
-
-    def _braid(self, ratio: float = 1.0,
-               reserved: "frozenset[Coord]" = frozenset()) -> None:
-        """Reduce dead ends to create loops (imperfect-maze conversion).
-
-        Note:
-            Standalone/minimal: no 3x3-open guard and no "42" protection.
-            For the reusable MazeGenerator only -- the spec IV.4 board
-            uses braiding.braiding.braid, which enforces those rules.
-        """
-        dead = [(x, y) for y in range(self.height) for x in range(self.width)
-                if (x, y) not in reserved and self._openings(x, y) == 1]
-        self._rng.shuffle(dead)
-        for (x, y) in dead[:int(len(dead) * ratio)]:
-            if self._openings(x, y) != 1:
-                continue
-            cands = [d for d, (dx, dy, bit) in _DIRS.items()
-                     if self._in_bounds(x + dx, y + dy)
-                     and (x + dx, y + dy) not in reserved
-                     and self.grid[y][x] & bit]
-            if cands:
-                self._open(x, y, self._rng.choice(cands))
 
     # --- Structure access -------------------------------------------------
     def wall_code(self, x: int, y: int) -> int:

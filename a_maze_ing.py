@@ -82,63 +82,6 @@ def build_maze(config: Config) -> Tuple[Maze, Set[Coord]]:
     return maze, reserved
 
 
-def run(config_path: str) -> int:
-    """Process the config file: generate, validate, write, and display the maze.
-
-    Args:
-        config_path: Path to the config file.
-
-    Returns:
-        Exit code (0 = success, 1 = error).
-    """
-    try:
-        config = parse_config(config_path)
-    except MazeError as err:
-        print(f"config error: {err}", file=sys.stderr)
-        return 1
-
-    try:
-        maze, reserved = build_maze(config)
-    except MazeError as err:
-        print(f"generation error: {err}", file=sys.stderr)
-        return 1
-
-    solution = solve(maze, config.entry, config.exit)
-
-    # Confirm post-generation that the conditions hold (spec IV.4). For
-    # PERFECT=False, also check the playable Pac-Man board rules.
-    problems = validate(maze, config.entry, config.exit,
-                        reserved=reserved, perfect=config.perfect,
-                        solution=solution, playable=not config.perfect)
-    if problems:
-        print(f"warning: the generated maze fails {len(problems)} condition(s):",
-              file=sys.stderr)
-        for p in problems:
-            print(f"  - {p}", file=sys.stderr)
-
-    try:
-        write_maze(config.output_file, maze, config.entry, config.exit,
-                   solution)
-    except MazeError as err:
-        print(f"output error: {err}", file=sys.stderr)
-        return 1
-    print(f"wrote output file: {config.output_file}")
-
-    # Highlight exactly one shortest path (spec V), not every shortest-path
-    # cell, so a board with loops does not show several overlaid paths.
-    path_cells = (path_to_cells(config.entry, solution)
-                  if solution is not None else set())
-    render = get_display_mode(config.options.display)
-    print(render(maze, entry=config.entry, exit_=config.exit,
-                 path=path_cells, reserved=reserved, show_path=True))
-
-    # Offer interaction only when running interactively in a terminal
-    # (skip for pipes and other non-interactive runs so we do not hang).
-    if sys.stdin.isatty() and sys.stdout.isatty():
-        interact(config, maze, reserved)
-    return 0
-
-
 def interact(config: Config, maze: Maze, reserved: Set[Coord]) -> None:
     """Simple terminal interaction (spec V).
 
@@ -215,6 +158,63 @@ def interact(config: Config, maze: Maze, reserved: Set[Coord]) -> None:
             return
         else:
             print("Please enter 1-5.")
+
+
+def run(config_path: str) -> int:
+    """Process the config file: generate, validate, write, and display the maze.
+
+    Args:
+        config_path: Path to the config file.
+
+    Returns:
+        Exit code (0 = success, 1 = error).
+    """
+    try:
+        config = parse_config(config_path)
+    except MazeError as err:
+        print(f"config error: {err}", file=sys.stderr)
+        return 1
+
+    try:
+        maze, reserved = build_maze(config)
+    except MazeError as err:
+        print(f"generation error: {err}", file=sys.stderr)
+        return 1
+
+    solution = solve(maze, config.entry, config.exit)
+
+    # Confirm post-generation that the conditions hold (spec IV.4). For
+    # PERFECT=False, also check the playable Pac-Man board rules.
+    problems = validate(maze, config.entry, config.exit,
+                        reserved=reserved, perfect=config.perfect,
+                        solution=solution, playable=not config.perfect)
+    if problems:
+        print(f"warning: the generated maze fails {len(problems)} condition(s):",
+              file=sys.stderr)
+        for p in problems:
+            print(f"  - {p}", file=sys.stderr)
+
+    try:
+        write_maze(config.output_file, maze, config.entry, config.exit,
+                   solution)
+    except MazeError as err:
+        print(f"output error: {err}", file=sys.stderr)
+        return 1
+    print(f"wrote output file: {config.output_file}")
+
+    # Highlight exactly one shortest path (spec V), not every shortest-path
+    # cell, so a board with loops does not show several overlaid paths.
+    path_cells = (path_to_cells(config.entry, solution)
+                  if solution is not None else set())
+    render = get_display_mode(config.options.display)
+    print(render(maze, entry=config.entry, exit_=config.exit,
+                 path=path_cells, reserved=reserved, show_path=True))
+
+    # Offer interaction only when running interactively in a terminal
+    # (skip for pipes and other non-interactive runs so we do not hang).
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        interact(config, maze, reserved)
+    return 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:
