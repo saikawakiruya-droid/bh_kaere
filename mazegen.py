@@ -67,14 +67,19 @@ class MazeGenerator:
     """
 
     def __init__(self, width: int, height: int, seed: Optional[int] = None,
-                 perfect: bool = True) -> None:
+                 perfect: bool = True,
+                 rng: Optional[random.Random] = None) -> None:
         if width <= 0 or height <= 0:
             raise ValueError("width and height must be positive integers")
         self.width = width
         self.height = height
         self.seed = seed
         self.perfect = perfect
-        self._rng = random.Random(seed)
+        # An external random source can be injected (so a host program can
+        # share one reproducible stream across generation and its own
+        # post-processing); otherwise one is derived from ``seed``.
+        self._external_rng = rng is not None
+        self._rng = rng if rng is not None else random.Random(seed)
         # By default every cell is walled on all four sides.
         self.grid: List[List[int]] = [
             [0xF for _ in range(width)] for _ in range(height)
@@ -101,34 +106,53 @@ class MazeGenerator:
     def _openings(self, x: int, y: int) -> int:
         return sum(1 for d in _DIRS if self._is_open(x, y, d))
 
+    def _first_free(self, reserved: "frozenset[Coord]") -> Coord:
+        """Return the first non-reserved cell, scanning from the top-left."""
+        for y in range(self.height):
+            for x in range(self.width):
+                if (x, y) not in reserved:
+                    return (x, y)
+        raise ValueError("every cell is reserved: nothing to carve")
+
     # --- Generation -------------------------------------------------------
-    def generate(self, start: Optional[Coord] = None) -> "MazeGenerator":
+    def generate(self, start: Optional[Coord] = None,
+                 reserved: Optional[Set[Coord]] = None) -> "MazeGenerator":
         """Generate the maze with an iterative recursive backtracker.
 
         When ``perfect=False``, dead ends are reduced after generation to
         create loops.
 
         Args:
-            start: Cell to start carving from. ``None`` means ``(0, 0)``.
+            start: Cell to start carving from. ``None`` (or a reserved cell)
+                means the first non-reserved cell.
+            reserved: Cells to keep fully closed (never visited or carved), so
+                a host program can embed a fixed pattern (e.g. the "42" sign).
+                The remaining free cells must stay connected; any component not
+                reachable from ``start`` is left closed.
 
         Returns:
             Self (for method chaining).
         """
-        # Reset the random source so results are identical each run.
-        self._rng = random.Random(self.seed)
+        frozen: "frozenset[Coord]" = frozenset(reserved) if reserved else frozenset()
+        # Reset the random source so results are identical each run, unless an
+        # external stream was injected (the host owns its lifecycle then).
+        if not self._external_rng:
+            self._rng = random.Random(self.seed)
         self.grid = [[0xF for _ in range(self.width)]
                      for _ in range(self.height)]
 
-        sx, sy = start if start is not None else (0, 0)
+        if self.width * self.height - len(frozen) <= 0:
+            return self
+        sx, sy = (start if (start is not None and start not in frozen)
+                  else self._first_free(frozen))
         visited: Set[Coord] = {(sx, sy)}
         stack: List[Coord] = [(sx, sy)]
-        total = self.width * self.height
-        while len(visited) < total:
+        while stack:
             x, y = stack[-1]
             nbrs = []
             for d, (dx, dy, _) in _DIRS.items():
                 n = (x + dx, y + dy)
-                if self._in_bounds(*n) and n not in visited:
+                if self._in_bounds(*n) and n not in frozen and n not in visited:
                     nbrs.append((d, n))
             if nbrs:
                 d, n = self._rng.choice(nbrs)
@@ -139,10 +163,11 @@ class MazeGenerator:
                 stack.pop()
 
         if not self.perfect:
-            self._braid()
+            self._braid(reserved=frozen)
         return self
 
-    def _braid(self, ratio: float = 1.0) -> None:
+    def _braid(self, ratio: float = 1.0,
+               reserved: "frozenset[Coord]" = frozenset()) -> None:
         """Reduce dead ends to create loops (imperfect-maze conversion).
 
         Note:
@@ -151,13 +176,14 @@ class MazeGenerator:
             uses braiding.braiding.braid, which enforces those rules.
         """
         dead = [(x, y) for y in range(self.height) for x in range(self.width)
-                if self._openings(x, y) == 1]
+                if (x, y) not in reserved and self._openings(x, y) == 1]
         self._rng.shuffle(dead)
         for (x, y) in dead[:int(len(dead) * ratio)]:
             if self._openings(x, y) != 1:
                 continue
             cands = [d for d, (dx, dy, bit) in _DIRS.items()
                      if self._in_bounds(x + dx, y + dy)
+                     and (x + dx, y + dy) not in reserved
                      and self.grid[y][x] & bit]
             if cands:
                 self._open(x, y, self._rng.choice(cands))
