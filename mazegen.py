@@ -102,6 +102,26 @@ class MazeGenerator:
         return sum(1 for d in _DIRS if self._is_open(x, y, d))
 
     # --- Generation -------------------------------------------------------
+    def _braid(self, ratio: float = 1.0) -> None:
+        """Reduce dead ends to create loops (imperfect-maze conversion).
+
+        Note:
+            Standalone/minimal: no 3x3-open guard and no "42" protection.
+            For the reusable MazeGenerator only -- the spec IV.4 board
+            uses braiding.braiding.braid, which enforces those rules.
+        """
+        dead = [(x, y) for y in range(self.height) for x in range(self.width)
+                if self._openings(x, y) == 1]
+        self._rng.shuffle(dead)
+        for (x, y) in dead[:int(len(dead) * ratio)]:
+            if self._openings(x, y) != 1:
+                continue
+            cands = [d for d, (dx, dy, bit) in _DIRS.items()
+                     if self._in_bounds(x + dx, y + dy)
+                     and self.grid[y][x] & bit]
+            if cands:
+                self._open(x, y, self._rng.choice(cands))
+
     def generate(self, start: Optional[Coord] = None) -> "MazeGenerator":
         """Generate the maze with an iterative recursive backtracker.
 
@@ -141,26 +161,6 @@ class MazeGenerator:
         if not self.perfect:
             self._braid()
         return self
-
-    def _braid(self, ratio: float = 1.0) -> None:
-        """Reduce dead ends to create loops (imperfect-maze conversion).
-
-        Note:
-            Standalone/minimal: no 3x3-open guard and no "42" protection.
-            For the reusable MazeGenerator only -- the spec IV.4 board
-            uses braiding.braiding.braid, which enforces those rules.
-        """
-        dead = [(x, y) for y in range(self.height) for x in range(self.width)
-                if self._openings(x, y) == 1]
-        self._rng.shuffle(dead)
-        for (x, y) in dead[:int(len(dead) * ratio)]:
-            if self._openings(x, y) != 1:
-                continue
-            cands = [d for d, (dx, dy, bit) in _DIRS.items()
-                     if self._in_bounds(x + dx, y + dy)
-                     and self.grid[y][x] & bit]
-            if cands:
-                self._open(x, y, self._rng.choice(cands))
 
     # --- Structure access -------------------------------------------------
     def wall_code(self, x: int, y: int) -> int:
