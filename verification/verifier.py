@@ -1,11 +1,7 @@
 """Library-side maze verification: checks whether a maze satisfies spec IV.4.
 
 Call :func:`validate` right after generation to get the list of problems
-(empty means valid). The main pipeline uses this to confirm post-generation
-that "a compliant maze was produced". This is distinct from *validation*
-(:mod:`validation.config` / :mod:`validation.options`), which checks the
-config-file *input* before a maze is even built — this module *verifies* the
-already-built maze's structure instead.
+(empty means valid).
 
 For the standalone CLI (``python -m verification.cli <output_file>``, which
 reads an output file and calls :func:`validate` on it), see :mod:`verification.cli`.
@@ -37,6 +33,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Set, Tuple
 
 from core.maze import (
+    ALL_WALLS,
     DIRECTIONS,
     OPPOSITE,
     WALL_E,
@@ -113,12 +110,11 @@ def _check_connectivity(maze: Maze, entry: Coord, reserved: Set[Coord],
 
     When ``reserved`` is empty (the output-file case, where the file does not
     record the reserved cells), every ``0xF`` cell is treated as reserved
-    (allowed isolation) and excluded from the connectivity check, preserving
-    the original behaviour.
+    (allowed isolation) and excluded from the connectivity check.
     """
     problems: List[str] = []
     for (x, y) in reserved:
-        if maze.cells[y][x] != 0xF:
+        if maze.cells[y][x] != ALL_WALLS:
             problems.append(f"reserved cell is open: ({x},{y})")
 
     if reserved:
@@ -130,7 +126,7 @@ def _check_connectivity(maze: Maze, entry: Coord, reserved: Set[Coord],
         # Output-file case: the reserved set is unknown, so every fully closed
         # cell (the 42 sign) is treated as allowed isolation.
         closed = {(x, y) for y in range(maze.height) for x in range(maze.width)
-                  if maze.cells[y][x] == 0xF}
+                  if maze.cells[y][x] == ALL_WALLS}
     free = {(x, y) for y in range(maze.height) for x in range(maze.width)
             if (x, y) not in closed}
     if entry in closed:
@@ -161,9 +157,8 @@ def _check_playable(maze: Maze, reserved: Set[Coord],
     """Check the spec v2.2 "playable board" rules for ``PERFECT=False``.
 
     A default (non-perfect) maze must be usable by a Pac-Man-like game: the
-    four corners and the centre are open corridors (two or more openings each,
-    so they are through-corridors rather than dead ends), there are at least
-    two independent routes (loops), and dead ends stay rare.
+    four corners and the centre are open corridors (two or more openings each),
+    there are at least two independent routes (loops), and dead ends stay rare.
     """
     problems: List[str] = []
 
@@ -172,7 +167,7 @@ def _check_playable(maze: Maze, reserved: Set[Coord],
     # is a dead end, which the spec forbids for these cells.
     reachable: Set[Coord] = set(entry_dist.keys())
     for (x, y) in sorted(playable_corridors(maze.width, maze.height)):
-        if (x, y) in reserved or maze.cells[y][x] == 0xF:
+        if (x, y) in reserved or maze.cells[y][x] == ALL_WALLS:
             problems.append(
                 f"corner/centre is closed, not an open corridor: ({x},{y})"
             )
@@ -276,8 +271,7 @@ def validate(maze: Maze, entry: Coord, exit_: Coord,
         solution: The attached shortest path (validated if present).
         playable: Whether the spec v2.2 "playable Pac-Man board" rules apply
             (open corners/centre, at least two loops, rare dead ends). This is
-            opt-in: the output-file CLI leaves it off because a file does not
-            record the intended mode.
+            opt-in: the output-file CLI leaves it off.
 
     Returns:
         A list of problem messages. Empty means all conditions are satisfied.

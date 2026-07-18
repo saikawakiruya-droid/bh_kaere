@@ -1,7 +1,6 @@
 """Exception hierarchy used across the whole project.
 
-Errors are split into two families so callers can distinguish "fatal" from
-"non-fatal" problems:
+Errors are split into two families:
 
 - ``ConfigError`` family (fatal): the configuration is invalid and **the maze
   cannot be created**. Callers print a message and terminate the program.
@@ -9,8 +8,7 @@ Errors are split into two families so callers can distinguish "fatal" from
   **the maze itself can still be created**. Callers print a warning, omit the
   sign, and continue.
 
-All of them share ``MazeError`` as a common base, so they can be caught
-together or individually by kind.
+All of them share ``MazeError`` as a common base.
 """
 
 from __future__ import annotations

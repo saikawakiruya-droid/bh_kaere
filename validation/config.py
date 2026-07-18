@@ -57,10 +57,10 @@ def _read_pairs(path: str) -> Tuple[Dict[str, str], List[str]]:
 
     A malformed line (not in ``KEY=VALUE`` form, or with an empty key) is a
     **parse error**: it is reported immediately as an ``error`` (with its line
-    number) and skipped, but the read still continues so that every well-formed
-    pair is collected and the remaining problems can be surfaced too. Reading
-    never aborts here (except when the file itself cannot be opened); whether the
-    config is usable is decided by :func:`parse_config`.
+    number) and skipped, but the read still continues, collecting every
+    well-formed pair. Reading never aborts here (except when the file itself
+    cannot be opened); whether the config is usable is decided by
+    :func:`parse_config`.
 
     Returns:
         ``(pairs, parse_errors)`` — the collected pairs and the list of parse
@@ -122,8 +122,7 @@ def _parse_coord(raw: Dict[str, str], key: str,
     """Interpret an ``x,y`` coordinate key (ENTRY / EXIT) and validate range.
 
     The range check is skipped when ``width``/``height`` are ``None`` (i.e. they
-    failed to parse). This lets us still report this coordinate's own format
-    error rather than being masked by the upstream WIDTH/HEIGHT failure.
+    failed to parse).
     """
     value = raw[key]
     parts = value.split(",")

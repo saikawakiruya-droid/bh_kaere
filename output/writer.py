@@ -4,8 +4,6 @@ Format:
 
 - Each cell is a single upper-case hex digit (closed walls encoded as bits:
   bit0=north, bit1=east, bit2=south, bit3=west; 1 means the wall is closed).
-  The :class:`~core.maze.Maze` wall codes already match this layout, so the
-  value is simply turned into hex.
 - One line of cells per row.
 - One blank line, then 3 lines:
   entry ``x,y`` / exit ``x,y`` / shortest path (``N``/``E``/``S``/``W``).

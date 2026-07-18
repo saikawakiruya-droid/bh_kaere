@@ -1,13 +1,7 @@
 """Structural metrics of a maze: independent loops and dead ends.
 
-Both metrics are read-only queries over an already-built :class:`~core.maze.Maze`
-and are used from two different places for two different reasons:
-:mod:`braiding.braiding` calls :func:`count_loops` while braiding to know when
-to stop opening walls, and :mod:`verification.verifier` calls both to confirm
-the spec IV.4 v2.2 playable-board rules (at least two loops, dead ends rare).
-Kept in :mod:`core` (alongside :class:`~core.maze.Maze`) rather than under
-either consumer, since it is a general-purpose Maze query, not specific to
-either braiding or verification.
+Both metrics are read-only queries over an already-built
+:class:`~core.maze.Maze`.
 
 Standalone usage::
 
@@ -30,10 +24,7 @@ def count_loops(maze: Maze, reserved: Set[Coord]) -> int:
     """Return the number of independent loops among the free (non-reserved) cells.
 
     For a connected graph the cycle rank (number of independent loops) is
-    ``edges - vertices + 1``. The free cells stay connected throughout braiding
-    (walls are only opened, never closed), so this formula holds. A perfect
-    maze (spanning tree) has ``edges = vertices - 1`` and therefore 0 loops;
-    each extra opened wall adds exactly one loop.
+    ``edges - vertices + 1``.
 
     Args:
         maze: The maze to inspect.
@@ -66,10 +57,7 @@ def count_dead_ends(maze: Maze, reserved: Set[Coord]) -> int:
     A cell is a dead end when it has exactly one opening. For this check the
     outer border counts as a wall, but a reserved ("42") cell does *not*: a wall
     facing a sign cell is not treated as a wall here. As a result, no cell is
-    reported as a dead end merely because the sign blocks its other sides -- so
-    dead ends arising from the sign's presence (including around the "42"
-    pattern) disappear, matching ``maze_analyzer.py``, which tolerates dead
-    ends enclosed by the mandatory "42".
+    reported as a dead end merely because the sign blocks its other sides.
 
     Args:
         maze: The maze to inspect.

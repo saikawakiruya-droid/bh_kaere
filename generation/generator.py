@@ -1,9 +1,8 @@
 """Selection registry for maze generation algorithms.
 
-Currently the only choice is the **recursive backtracker**
-(:func:`generation.backtracker.generate_backtracker`), but a mechanism to select
-one via the ``ALGORITHM`` config key is provided from the start (to add more
-algorithms as a bonus, just register them in ``ALGORITHMS``).
+The algorithm is selected via the ``ALGORITHM`` config key. Currently the only
+choice is the **recursive backtracker**
+(:func:`generation.backtracker.generate_backtracker`).
 
 Every generator function shares the same signature ``(width, height,
 reserved, rng, start) -> Maze``. ``reserved`` is the set of cells kept closed

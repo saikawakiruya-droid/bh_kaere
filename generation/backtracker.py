@@ -1,15 +1,12 @@
 """Recursive-backtracker maze generation (iterative implementation).
 
 Registered under the name ``"backtracker"`` in :mod:`generation.generator`'s
-``ALGORITHMS`` registry; kept in its own file so a bonus algorithm (Prim's,
-Kruskal's, ...) can be added as a sibling file without touching this one.
+``ALGORITHMS`` registry.
 
-[Spike] The carving itself is delegated to the reusable
-:class:`mazegen.MazeGenerator` (the spec VI standalone module), so the project
-has a single spanning-tree implementation instead of two. This thin adapter
-just injects the shared RNG, forwards the reserved ("42") cells, and wraps the
-resulting wall grid back into a :class:`core.maze.Maze` (both use the identical
-4-bit wall layout, so the grid can be adopted directly).
+The carving is delegated to the reusable :class:`mazegen.MazeGenerator` (the
+spec VI standalone module). This thin adapter injects the shared RNG, forwards
+the reserved ("42") cells, and wraps the resulting wall grid into a
+:class:`core.maze.Maze`.
 
 Standalone usage::
 
@@ -43,15 +40,13 @@ def generate_backtracker(width: int, height: int, reserved: Set[Coord],
 
     Delegates carving to :class:`mazegen.MazeGenerator` with ``perfect=True``
     (spanning tree only; playable braiding stays in :mod:`braiding.braiding`).
-    The shared ``rng`` is injected so generation and the caller's later
-    post-processing draw from one reproducible stream. Cells in ``reserved``
-    are never visited or carved, so they stay closed and form the "42" sign.
+    Cells in ``reserved`` are never visited or carved.
 
     Args:
         width: Maze width.
         height: Maze height.
         reserved: Set of cells to keep closed.
-        rng: Random source for reproducibility (``random.Random``).
+        rng: Random source (``random.Random``).
         start: Cell to start carving from (the validated entry).
 
     Returns:

@@ -4,8 +4,7 @@
 ``a_maze_ing.py`` and reconstructs the :class:`~core.maze.Maze` plus
 entry/exit/solution from it, then runs :func:`verification.verifier.validate`
 against it. The CLI validates structure only (an output file does not record
-whether the maze was meant to be ``PERFECT`` or "playable"), unlike the main
-pipeline, which passes those flags directly.
+whether the maze was meant to be ``PERFECT`` or "playable").
 """
 
 from __future__ import annotations
