@@ -13,8 +13,7 @@ moving south increases ``y``.
 
 This module is the single source of truth for the wall definitions reused by
 both the generator and the renderer, and it also provides the search
-(solving) algorithms. It has no dependency on the rest of the package, so it
-can be copied into another project on its own.
+(solving) algorithms. It has no dependency on the rest of the package.
 
 Standalone usage::
 
@@ -62,9 +61,7 @@ def playable_corridors(width: int, height: int) -> Set[Coord]:
 
     These are the "Pac-Man corridors" of a playable board (spec IV.4, v2.2):
     the generator keeps them free of the "42" sign and turns them into open
-    corridors, and the verifier checks that they really are open. Defined here,
-    the single source of truth for maze geometry, so the generator side
-    (:mod:`a_maze_ing`) and the verifier side agree on one definition.
+    corridors, and the verifier checks that they really are open.
     """
     return {
         (0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1),
@@ -118,8 +115,7 @@ class Maze:
     def open_wall(self, x: int, y: int, direction: str) -> None:
         """Open the wall between ``(x, y)`` and its ``direction`` neighbor.
 
-        To keep the spec IV.4 invariant "adjacent cells share the same wall",
-        the matching wall bit is cleared on both sides at once.
+        The matching wall bit is cleared on both sides at once.
 
         Args:
             x: Cell x coordinate.
@@ -165,8 +161,7 @@ class Maze:
         """Return whether the ``w`` x ``h`` block at ``(x0, y0)`` is fully open.
 
         Returns ``True`` when every internal wall between adjacent cells in the
-        block is open (i.e. a single contiguous open area). Used to enforce the
-        passage-width constraint (no fully open 3x3 area).
+        block is open (i.e. a single contiguous open area).
         """
         for y in range(y0, y0 + h):
             for x in range(x0, x0 + w):
@@ -177,12 +172,7 @@ class Maze:
         return True
 
     def count_openings(self, x: int, y: int) -> int:
-        """Return the number of open walls (passages) of cell ``(x, y)``.
-
-        A single shared implementation for a query both :mod:`braiding.braiding`
-        and :mod:`verification.verifier` need (a cell with exactly one opening
-        is a dead end), so neither module has to keep its own private copy.
-        """
+        """Return the number of open walls (passages) of cell ``(x, y)``."""
         return sum(1 for d in DIRECTIONS if self.is_open(x, y, d))
 
 
@@ -190,8 +180,7 @@ def bfs_distances(maze: Maze, source: Coord) -> Dict[Coord, int]:
     """Compute the shortest distance (in steps) from ``source`` to each cell.
 
     Runs a single breadth-first search (BFS) and computes the minimum number
-    of steps from ``source`` to each cell. Because every edge has uniform
-    weight, the BFS visit order is exactly the shortest distance.
+    of steps from ``source`` to each cell.
 
     Args:
         maze: The maze to search.
@@ -229,8 +218,7 @@ def solve(maze: Maze, entry: Coord, exit_: Coord) -> Optional[str]:
 
     Builds a distance map ``d_exit`` from the exit, then repeatedly steps to
     the neighbor whose remaining distance to the exit drops by exactly 1,
-    tracing a unique shortest path. Because the distances come from BFS, the
-    resulting path is always shortest.
+    tracing a unique shortest path.
 
     Args:
         maze: The maze to search.
@@ -311,8 +299,7 @@ def path_to_cells(entry: Coord, solution: str) -> Set[Coord]:
     Unlike :func:`solution_cells` (which returns every cell lying on *any*
     shortest path, i.e. the union when several exist), this traces the single
     path described by the ``solution`` move string — the one shortest path the
-    program reports. Renderers use it to highlight exactly **one** shortest
-    path (spec V), so a board with loops never shows several overlaid paths.
+    program reports.
 
     Args:
         entry: Entry coordinate ``(x, y)`` the moves start from.

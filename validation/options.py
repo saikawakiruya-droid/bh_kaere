@@ -14,8 +14,7 @@ Key           Meaning                               Default
 ============  ====================================  ==============
 
 Optional keys are **non-fatal**: if a value is invalid, a warning is printed
-and the default is used instead, so generation continues. (Contrast with the
-required keys in :mod:`validation.config`, where a missing key aborts.)
+and the default is used instead.
 """
 
 from __future__ import annotations

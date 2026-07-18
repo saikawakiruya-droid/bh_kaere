@@ -115,8 +115,7 @@ def _corridors_openable(width: int, height: int, reserved: Set[Coord],
     Spec IV.4 (``PERFECT=False``) requires the four corners and the centre to be
     **open corridors**, i.e. to end up with at least two openings. A cell can
     only be opened toward a free (non-reserved) in-bounds neighbor, so it needs
-    at least two such neighbors. Reserving the "42" sign right around a corridor
-    cell would strangle it into a dead end that no braiding could repair.
+    at least two such neighbors.
     """
     for (x, y) in corridors:
         if (x, y) in reserved:
@@ -136,8 +135,7 @@ def _free_connected(width: int, height: int, reserved: Set[Coord]) -> bool:
     """Return whether the non-reserved (free) cells form one 4-connected group.
 
     This tests whether "the maze can still be generated after reserving the
-    sign" (i.e. whether all free cells can be joined into a single tree). If it
-    is not connected, generation would leave isolated cells.
+    sign" (i.e. whether all free cells can be joined into a single tree).
     """
     free = {(x, y)
             for y in range(height) for x in range(width)
@@ -184,8 +182,7 @@ def reserved_cells(width: int, height: int,
         corridors: Cells that must stay openable as through-corridors (the four
             corners and the centre for a playable board, spec IV.4). A
             placement that leaves any of them with fewer than two free
-            neighbors is rejected, since braiding could never lift it out of a
-            dead end.
+            neighbors is rejected.
 
     Returns:
         The set of cells ``(x, y)`` to keep closed.

@@ -59,7 +59,7 @@ class MazeGenerator:
     Attributes:
         width: Width (in cells).
         height: Height (in cells).
-        seed: Random seed (reproducibility). ``None`` means random each run.
+        seed: Random seed. ``None`` means random each run.
         perfect: ``True`` for a perfect maze (spanning tree), ``False`` for
             one with loops.
         grid: ``grid[y][x]`` holds each cell's 4-bit wall code (valid after
@@ -107,8 +107,6 @@ class MazeGenerator:
 
         Note:
             Standalone/minimal: no 3x3-open guard and no "42" protection.
-            For the reusable MazeGenerator only -- the spec IV.4 board
-            uses braiding.braiding.braid, which enforces those rules.
         """
         dead = [(x, y) for y in range(self.height) for x in range(self.width)
                 if self._openings(x, y) == 1]

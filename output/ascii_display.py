@@ -1,8 +1,7 @@
 """ASCII-art rendering of a maze.
 
 Registered under the name ``"ascii"`` in :mod:`output.display`'s
-``DISPLAY_MODES`` registry; kept in its own file so a bonus display mode
-(e.g. MLX) can be added as a sibling file without touching this one.
+``DISPLAY_MODES`` registry.
 
 Standalone usage::
 

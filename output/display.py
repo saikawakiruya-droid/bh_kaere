@@ -1,9 +1,7 @@
 """Selection registry for maze display modes.
 
-Currently the only choice is **terminal ASCII**
-(:func:`output.ascii_display.render_ascii`), but a mechanism to select one via
-the ``DISPLAY`` config key is provided from the start (to add e.g. MLX later,
-just register it in ``DISPLAY_MODES``).
+The display mode is selected via the ``DISPLAY`` config key. Currently the only
+choice is **terminal ASCII** (:func:`output.ascii_display.render_ascii`).
 
 Standalone usage::
 

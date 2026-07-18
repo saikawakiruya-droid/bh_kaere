@@ -4,17 +4,14 @@ When ``PERFECT=False``, the dead ends of a perfect maze (spanning tree) are
 reduced to create loops (multiple paths), and the result is shaped into a
 board directly usable by a Pac-Man-like game (spec IV.4, v2.2):
 
-- dead ends are removed so a chased player is rarely trapped;
+- dead ends are removed;
 - the four corners and the centre are kept as open corridors (they are already
   reserved-free by the initializer, and are given at least two openings here);
-- at least two independent loops are guaranteed, so there is always an
-  alternative route.
+- at least two independent loops are guaranteed.
 
 Every wall removal is checked so it never creates a **fully open 3x3 area**;
 passages therefore stay at most 2 cells wide. Reserved cells (the "42" sign)
-are never opened or connected to. Independent-loop counting lives in
-:mod:`core.metrics` (``count_loops``), used here to satisfy the loop
-guarantee.
+are never opened or connected to.
 
 Standalone usage::
 
@@ -81,9 +78,7 @@ def _ensure_loops(maze: Maze, reserved: Set[Coord], rng: random.Random,
                   min_loops: int) -> int:
     """Open extra safe walls until there are at least ``min_loops`` loops.
 
-    Because the free cells are already connected, any wall opened between two
-    free cells adds exactly one independent loop. Stops early if no wall can be
-    opened without creating a 3x3 open area.
+    Stops early if no wall can be opened without creating a 3x3 open area.
 
     Returns:
         The number of walls opened.
@@ -120,14 +115,12 @@ def braid(maze: Maze, reserved: Set[Coord], rng: random.Random,
     1. **Dead-end reduction** — for each dead end (a cell with a single
        opening), open one closed wall to connect it elsewhere.
     2. **Corridor enforcement** — every cell in ``corridors`` (the four corners
-       and the centre for a Pac-Man board) is given at least two openings so it
-       is a through-corridor rather than a dead end.
+       and the centre for a Pac-Man board) is given at least two openings.
     3. **Loop guarantee** — extra walls are opened until there are at least
        ``min_loops`` independent loops.
 
     Openings that would create a fully open 3x3 area are never kept, and
-    reserved cells ("42") are never connected to. Connectivity is preserved
-    because walls are only opened.
+    reserved cells ("42") are never connected to. Connectivity is preserved.
 
     Args:
         maze: The target maze (modified in place).
@@ -135,7 +128,7 @@ def braid(maze: Maze, reserved: Set[Coord], rng: random.Random,
         rng: Random source.
         ratio: Fraction of dead ends to process in phase 1 (0.0-1.0).
         corridors: Cells that must end up with at least two openings. ``None``
-            skips phase 2 (backward-compatible plain braiding).
+            skips phase 2.
         min_loops: Minimum number of independent loops to guarantee. ``0``
             skips phase 3.
 

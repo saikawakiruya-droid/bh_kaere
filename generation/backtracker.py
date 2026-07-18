@@ -1,8 +1,7 @@
 """Recursive-backtracker maze generation (iterative implementation).
 
 Registered under the name ``"backtracker"`` in :mod:`generation.generator`'s
-``ALGORITHMS`` registry; kept in its own file so a bonus algorithm (Prim's,
-Kruskal's, ...) can be added as a sibling file without touching this one.
+``ALGORITHMS`` registry.
 
 Standalone usage::
 
@@ -80,9 +79,8 @@ def generate_backtracker(width: int, height: int, reserved: Set[Coord],
                          start: Optional[Coord] = None) -> Maze:
     """Generate a perfect maze (spanning tree) with an iterative backtracker.
 
-    Uses an explicit stack (iterative implementation), so even large mazes do
-    not hit Python's recursion limit. Cells in ``reserved`` are never visited
-    or carved, so they stay closed and form the "42" sign.
+    Uses an explicit stack (iterative implementation). Cells in ``reserved``
+    are never visited or carved, so they stay closed and form the "42" sign.
 
     Full-pipeline assumption: this is only ever called through the whole
     program, where ``reserved`` comes from ``reserved_cells`` and keeps the
@@ -95,7 +93,7 @@ def generate_backtracker(width: int, height: int, reserved: Set[Coord],
         width: Maze width.
         height: Maze height.
         reserved: Set of cells to keep closed.
-        rng: Random source for reproducibility (``random.Random``).
+        rng: Random source (``random.Random``).
         start: Cell to start carving from (the validated entry).
 
     Returns:
