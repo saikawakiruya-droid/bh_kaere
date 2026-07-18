@@ -37,6 +37,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Set, Tuple
 
 from core.maze import (
+    ALL_WALLS,
     DIRECTIONS,
     OPPOSITE,
     WALL_E,
@@ -118,7 +119,7 @@ def _check_connectivity(maze: Maze, entry: Coord, reserved: Set[Coord],
     """
     problems: List[str] = []
     for (x, y) in reserved:
-        if maze.cells[y][x] != 0xF:
+        if maze.cells[y][x] != ALL_WALLS:
             problems.append(f"reserved cell is open: ({x},{y})")
 
     if reserved:
@@ -130,7 +131,7 @@ def _check_connectivity(maze: Maze, entry: Coord, reserved: Set[Coord],
         # Output-file case: the reserved set is unknown, so every fully closed
         # cell (the 42 sign) is treated as allowed isolation.
         closed = {(x, y) for y in range(maze.height) for x in range(maze.width)
-                  if maze.cells[y][x] == 0xF}
+                  if maze.cells[y][x] == ALL_WALLS}
     free = {(x, y) for y in range(maze.height) for x in range(maze.width)
             if (x, y) not in closed}
     if entry in closed:
@@ -172,7 +173,7 @@ def _check_playable(maze: Maze, reserved: Set[Coord],
     # is a dead end, which the spec forbids for these cells.
     reachable: Set[Coord] = set(entry_dist.keys())
     for (x, y) in sorted(playable_corridors(maze.width, maze.height)):
-        if (x, y) in reserved or maze.cells[y][x] == 0xF:
+        if (x, y) in reserved or maze.cells[y][x] == ALL_WALLS:
             problems.append(
                 f"corner/centre is closed, not an open corridor: ({x},{y})"
             )

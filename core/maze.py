@@ -38,6 +38,10 @@ WALL_E = 1 << 1
 WALL_S = 1 << 2
 WALL_W = 1 << 3
 
+# A cell closed on all four sides (0xF). The initial state of every cell and
+# the value of the "42" sign cells that stay walled in.
+ALL_WALLS = WALL_N | WALL_E | WALL_S | WALL_W
+
 Coord = Tuple[int, int]
 
 # Direction label -> (dx, dy, wall bit for that direction).
@@ -85,7 +89,8 @@ class Maze:
         self.height = height
         if cells is None:
             # By default every cell is closed on all four sides.
-            self.cells = [[0xF for _ in range(width)] for _ in range(height)]
+            self.cells = [[ALL_WALLS for _ in range(width)]
+                          for _ in range(height)]
         else:
             if len(cells) != height or any(len(row) != width for row in cells):
                 raise ValueError("cells size does not match width/height")
